@@ -14,7 +14,8 @@ module.exports = function(grunt) {
                 bases: ['./public'],
                 port: 8081,
                 hostname: "0.0.0.0",
-                livereload: true
+                livereload: true,
+                server: './index.js'
             }
         }
     },
@@ -27,7 +28,7 @@ module.exports = function(grunt) {
     },
     watch: {
       javascript: {
-        files: ['client/**/*.js'],
+        files: ['client/**/*.js', 'client/**/*.html', 'client/**/*.css'],
         tasks: ['browserify'],
         options: {
                 livereload: true

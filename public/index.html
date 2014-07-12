@@ -2,11 +2,19 @@
 <html>
   <head>
     <title>Sphero Controller</title>
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <canvas id="c" width="1280" height="720"></canvas>
-    <ul id="teams"></ul>
+    <form>
+      <h1>Sphero</h1>
+      <button id="sphero_stop">Stop</button>
+      <button id="sphero_startcalibration">Start calibration</button>
+      <button id="sphero_stopcalibration">Stop calibration</button>
+    </form>
+    <ul id="players"></ul>
     <script src="./jquery-1.11.0.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src='./sphero.js'></script>
   </body>
 </html>

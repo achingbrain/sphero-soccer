@@ -19,6 +19,10 @@ var findColour = function(canvas, range, distance, event) {
   avgGreen /= pixelCount
   avgBlue /= pixelCount
 
+  avgRed = parseInt(avgRed, 10)
+  avgGreen = parseInt(avgGreen, 10)
+  avgBlue = parseInt(avgBlue, 10)
+
   return {
     red: {
       upper: avgRed + distance,

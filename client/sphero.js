@@ -1,11 +1,11 @@
-var getUserMedia = require('./getUserMedia'),
+var getUserMedia = require('getusermedia'),
   getPosition = require('./getPosition'),
   Canvas = require('./Canvas')
   VideoBuffer = require('./VideoBuffer'),
   findColour = require('./findColour')
 
 var teams = [] // {red: {lower: int, upper: in}, green: {lower...}}
-var ball = {} // {lower: int, upper: in}
+var ball // {lower: int, upper: in}
 var distance = 20
 var range = 20
 
@@ -70,13 +70,40 @@ var init = function() {
           minHeight: 720
         }
       }
-    }, function(stream) {
-      videoBuffer.setStream(stream)
+    }, function(error, stream) {
+    if(error) throw error
 
-      window.requestAnimationFrame(draw);
-    }, function(error) {
-    console.error(error)
+    videoBuffer.setStream(stream)
+
+    window.requestAnimationFrame(draw)
   });
+
+  console.info('creating websocket connection to', window.location.origin)
+  var socket = io(window.location.origin)
+  socket.on('connect', function() {
+    console.info('connected to websocket')
+    socket.on('event', function(data){
+      console.info('incoming event', data)
+    })
+
+    socket.on('sphero:warn', function(message) {
+      console.warn(message)
+    })
+    socket.on('sphero:info', function(message) {
+      console.info(message)
+    })
+
+    socket.emit('sphero:stop')
+  })
+
+  var buttons = ['sphero_stop', 'sphero_startcalibration', 'sphero_stopcalibration']
+  buttons.forEach(function(name) {
+    $('#' + name).on('click', function(event) {
+      socket.emit(name.replace('_', ':'))
+      event.preventDefault()
+      return false
+    })
+  })
 
   $('canvas').on('click', function(event) {
     var bounds = findColour(canvas, range, distance, event)
@@ -84,40 +111,13 @@ var init = function() {
     // was it the ball or a team?
     if(!ball) {
       ball = bounds
+
+      $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Ball</li>')
     } else {
       teams.push(bounds)
+
+      $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Team</li>')
     }
-  })
-
-  $('button').on('click', function() {
-    try {
-      var team = $('select').val()
-
-      console.info('Recording colour for team', team)
-
-      var w = canvas.clientWidth
-      var h = canvas.clientHeight
-      var pixelCount = 0
-      var pixels = bCtx.getImageData(0, 0, w, h)
-
-      for (var i = 0; i < pixels.data.length; i+=4) {
-        avgRed += pixels.data[i+0]
-        avgGreen += pixels.data[i+1]
-        avgBlue += pixels.data[i+2]
-
-        pixelCount++
-      }
-
-      avgRed /= pixelCount
-      avgGreen /= pixelCount
-      avgBlue /= pixelCount
-
-      console.info('Colour', avgRed, avgGreen, avgBlue)
-    } catch(e) {
-      console.error(e)
-    }
-
-    return false
   })
 }
 
