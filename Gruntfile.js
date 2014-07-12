@@ -15,14 +15,14 @@ module.exports = function(grunt) {
                 port: 8081,
                 hostname: "0.0.0.0",
                 livereload: true,
-                server: './index.js'
+                server: './server/index.js'
             }
         }
     },
     browserify: {
       dist: {
         files: {
-          'public/sphero.js': ['client/**/*.js'],
+          'public/index.js': ['client/index.js'],
         }
       }
     },

@@ -1,7 +1,7 @@
 var app = require('express')(),
   server = require('http').createServer(app),
   io = require('socket.io').listen(server),
-  withSphero = require('./server/withSphero')
+  withSphero = require('./withSphero')
 
 io.sockets.on('connection', function(socket) {
   socket.on('sphero:start', function() {

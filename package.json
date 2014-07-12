@@ -2,7 +2,7 @@
   "name": "sphero-soccer",
   "version": "0.0.0",
   "description": "Autonomous soccer bot",
-  "main": "index.js",
+  "main": "server/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
