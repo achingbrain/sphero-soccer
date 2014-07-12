@@ -96,7 +96,7 @@ var init = function() {
     socket.emit('sphero:stop')
   })
 
-  var buttons = ['sphero_stop', 'sphero_startcalibration', 'sphero_stopcalibration']
+  var buttons = ['sphero_start', 'sphero_stop', 'sphero_startcalibration', 'sphero_stopcalibration']
   buttons.forEach(function(name) {
     $('#' + name).on('click', function(event) {
       socket.emit(name.replace('_', ':'))

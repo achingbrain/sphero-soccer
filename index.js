@@ -1,62 +1,43 @@
-var Cylon = require('cylon'),
-  app = require('express')(),
+var app = require('express')(),
   server = require('http').createServer(app),
-  io = require('socket.io').listen(server)
+  io = require('socket.io').listen(server),
+  withSphero = require('./server/withSphero')
 
-var sphero
-
-Cylon.robot({
-  connection: { name: 'sphero', adaptor: 'sphero', port: '/dev/tty.Sphero-BRG-AMP-SPP-6' },
-  device: {name: 'sphero', driver: 'sphero'},
-
-  work: function(my) {
-    sphero = my.sphero
-
-    console.info('connected')
-
-    my.sphero.setColor('yellow')
-
-    //every((1).second(), function() {
-    //  my.sphero.roll(60, Math.floor(Math.random() * 360));
-    //})
-
-    console.info('stopping')
-    my.sphero.stop()
-  }
-}).start()
-
-io.sockets.on('connection', function (socket) {
-  socket.on('sphero:stop', function (data) {
-    if(!sphero) {
-      socket.emit('sphero:warn', 'Not connected to sphero');
-      return
-    }
-
-    sphero.stop()
-    socket.emit('sphero:info', 'Sphero stopped');
+io.sockets.on('connection', function(socket) {
+  socket.on('sphero:start', function() {
+    withSphero(function(sphero) {
+      sphero.stop()
+      socket.emit('sphero:info', 'Sphero started');
+    })
   })
 
-  socket.on('sphero:startcalibration', function (data) {
-    if(!sphero) {
-      socket.emit('sphero:warn', 'Not connected to sphero');
-      return
-    }
-
-    sphero.startCalibration()
-    socket.emit('sphero:info', 'Sphero calibration started');
+  socket.on('sphero:stop', function() {
+    withSphero(function(sphero) {
+      sphero.stop()
+      socket.emit('sphero:info', 'Sphero stopped');
+    })
   })
 
-  socket.on('sphero:stopcalibration', function (data) {
-    if(!sphero) {
-      socket.emit('sphero:warn', 'Not connected to sphero');
-      return
-    }
-
-    sphero.finishCalibration()
-    socket.emit('sphero:info', 'Sphero calibration stopped');
+  socket.on('sphero:startcalibration', function() {
+    withSphero(function(sphero) {
+      sphero.startCalibration()
+      socket.emit('sphero:info', 'Sphero calibration started');
+    })
   })
 
+  socket.on('sphero:stopcalibration', function() {
+    withSphero(function(sphero) {
+      sphero.finishCalibration()
+      socket.emit('sphero:info', 'Sphero calibration stopped');
+    })
+  })
 
+  socket.on('sphero:roll', function(speed, heading, state) {
+    withSphero(function(sphero) {
+      sphero.roll(speed, heading, state)
+      socket.emit('sphero:info', 'Sphero rolling');
+    })
+  })
 })
 
 exports = module.exports = server;

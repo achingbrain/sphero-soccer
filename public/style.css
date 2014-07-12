@@ -1,6 +1,7 @@
 body {
   margin: 0;
   padding: 0;
+  font-family: Helvetica, Arial, sans-serif;
 }
 canvas {
   float: left;
@@ -12,11 +13,24 @@ ul {
 li {
   list-style: none;
   display: inline-block;
-  margin: 10px 10px 0 10px;
+  margin: 0 10px 10px 10px;
   padding: 35px 20px 5px 20px;
   text-align: center;
   min-width: 50px;
   min-height: 50px;
   border-radius: 5px;
-  font-family: Helvetica, Arial, sans-serif;
+
+}
+h1 {
+  margin: 0;
+  padding: 0 0 5px 0;
+}
+form {
+  margin: 0;
+  padding: 10px 10px 8px 10px;
+  display: inline-block;
+}
+form button {
+  display: block;
+  margin-top: 5px;
 }
