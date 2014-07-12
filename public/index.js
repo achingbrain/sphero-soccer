@@ -54,9 +54,32 @@ VideoBuffer.prototype.setStream = function(stream) {
 module.exports = VideoBuffer
 
 },{}],3:[function(require,module,exports){
-var getPosition = require('./getPosition')
 
-var findColour = function(canvas, range, distance, event) {
+var colours = ['red', 'green', 'blue']
+
+module.exports = function(red, green, blue, target) {
+  var subject = {
+    red: red,
+    green: green,
+    blue: blue
+  }
+
+  var matches = 0
+
+  colours.forEach(function(colour) {
+    if(subject[colour] > target[colour].lower && subject[colour] < target[colour].upper) {
+      matches++
+    }
+  })
+
+  return matches == 3
+}
+
+},{}],4:[function(require,module,exports){
+var getPosition = require('./getPosition'),
+  mapColour = require('./mapColour')
+
+var findColour = function(canvas, range, sensitivity, event) {
   var position = getPosition(event);
 
   // get the average colour
@@ -79,31 +102,12 @@ var findColour = function(canvas, range, distance, event) {
   avgGreen = parseInt(avgGreen, 10)
   avgBlue = parseInt(avgBlue, 10)
 
-  return {
-    red: {
-      upper: avgRed + distance,
-      lower: avgRed - distance
-    },
-    green: {
-      upper: avgGreen + distance,
-      lower: avgGreen - distance
-    },
-    blue: {
-      upper: avgBlue + distance,
-      lower: avgBlue - distance
-    },
-    position: position,
-    average: {
-      red: avgRed,
-      green: avgGreen,
-      blue: avgBlue
-    }
-  }
+  return mapColour(avgRed, avgGreen, avgBlue, sensitivity)
 }
 
 module.exports = findColour
 
-},{"./getPosition":4}],4:[function(require,module,exports){
+},{"./getPosition":5,"./mapColour":7}],5:[function(require,module,exports){
 
 module.exports = function getPosition(e) {
   //this section is from http://www.quirksmode.org/js/events_properties.html
@@ -133,16 +137,22 @@ module.exports = function getPosition(e) {
   return {"x": x, "y": y}
 }
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var getUserMedia = require('getusermedia'),
   getPosition = require('./getPosition'),
   Canvas = require('./Canvas')
   VideoBuffer = require('./VideoBuffer'),
-  findColour = require('./findColour')
+  findColour = require('./findColour'),
+  colourMatch = require('./colourMatch'),
+  mapColour = require('./mapColour')
 
-var teams = [] // {red: {lower: int, upper: in}, green: {lower...}}
-var ball // {lower: int, upper: in}
-var distance = 20
+var teams = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
+var ball // {red: {lower: int, upper: in}, green: {lower...}}
+
+// how similar a colour should be to the selected hue - RGB values should be +/- this
+var sensitivity = 50
+
+// how large a sample area under the mouse click to use to get an average colour
 var range = 20
 
 var init = function() {
@@ -153,35 +163,25 @@ var init = function() {
     context.drawImage(videoBuffer.element, 0, 0, width, height)
   })
 
-/*  function inBounds(value, target, distance) {
-    var upper = target + ((target / 100) * distance)
-    var lower = target - ((target / 100) * distance)
+  var count = 0
 
-    if(upper > 255) {
-      upper = 255
+  canvas.addRenderer(function(context, width, height) {
+    if(count < 30) {
+      count++
+      return
     }
 
-    if(lower < 0) {
-      lower = 0
-    }
+    count = 0
 
-    return value >= lower && value <= upper
-  }
-
-  function findRed(w, h) {
-    var pixels = bCtx.getImageData(0, 0, w, h);
+    var pixels = context.getImageData(0, 0, width, height);
     var pixelData = pixels.data;
 
     for (var i = 0; i < pixelData.length; i+=4) {
-      //pixelData.data[i+0]=r;
-      var rr = pixelData[i+0];
-      var gg = pixelData[i+1];
-      var bb = pixelData[i+2];
+      var r = pixelData[i + 0], g = pixelData[i + 1], b = pixelData[i + 2]
 
-      if(inBounds(rr, avgRed, distance) &&
-        inBounds(gg, avgGreen, distance) &&
-        inBounds(bb, avgBlue, distance)) {
-        var average = parseInt((rr+gg+bb)/3);
+      if(ball && colourMatch(r, b, b, ball)) {
+
+        var average = parseInt((r+g+b)/3);
         pixelData[parseInt(i+0)]=average;
         pixelData[parseInt(i+1)]=average;
         pixelData[parseInt(i+2)]=average;
@@ -190,9 +190,9 @@ var init = function() {
     }
 
     pixels.data = pixelData;
-    gCtx.putImageData(pixels, 0, 0);
-  }
-*/
+    context.putImageData(pixels, 0, 0);
+  })
+
   function draw() {
     canvas.draw()
 
@@ -214,22 +214,14 @@ var init = function() {
     window.requestAnimationFrame(draw)
   });
 
-  console.info('creating websocket connection to', window.location.origin)
   var socket = io(window.location.origin)
   socket.on('connect', function() {
-    console.info('connected to websocket')
-    socket.on('event', function(data){
-      console.info('incoming event', data)
-    })
-
     socket.on('sphero:warn', function(message) {
       console.warn(message)
     })
     socket.on('sphero:info', function(message) {
       console.info(message)
     })
-
-    socket.emit('sphero:stop')
   })
 
   var buttons = ['sphero_start', 'sphero_stop', 'sphero_startcalibration', 'sphero_stopcalibration']
@@ -242,7 +234,7 @@ var init = function() {
   })
 
   $('canvas').on('click', function(event) {
-    var bounds = findColour(canvas, range, distance, event)
+    var bounds = findColour(canvas, range, sensitivity, event)
 
     // was it the ball or a team?
     if(!ball) {
@@ -255,11 +247,51 @@ var init = function() {
       $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Team</li>')
     }
   })
+
+  $('#colour_sensitivity').on('change', function(event) {
+    sensitivity = $('#colour_sensitivity').val()
+
+    if(ball) {
+      ball = mapColour(ball.average.red, ball.average.green, ball.average.blue, sensitivity)
+    }
+
+    for(var i = 0; i < teams.length; i++) {
+      teams[i] = mapColour(teams[i].average.red, teams[i].average.green, teams[i].average.blue, sensitivity)
+    }
+
+    $('#sensitivity').text(sensitivity)
+  })
+
+  $('#sensitivity').text(sensitivity)
 }
 
 init()
 
-},{"./Canvas":1,"./VideoBuffer":2,"./findColour":3,"./getPosition":4,"getusermedia":6}],6:[function(require,module,exports){
+},{"./Canvas":1,"./VideoBuffer":2,"./colourMatch":3,"./findColour":4,"./getPosition":5,"./mapColour":7,"getusermedia":8}],7:[function(require,module,exports){
+
+module.exports = function(r, g, b, sensitivity) {
+  return {
+    red: {
+      upper: r + sensitivity,
+      lower: r - sensitivity
+    },
+    green: {
+      upper: g + sensitivity,
+      lower: g - sensitivity
+    },
+    blue: {
+      upper: b + sensitivity,
+      lower: b - sensitivity
+    },
+    average: {
+      red: r,
+      green: g,
+      blue: b
+    }
+  }
+}
+
+},{}],8:[function(require,module,exports){
 // getUserMedia helper by @HenrikJoreteg
 var func = (window.navigator.getUserMedia ||
             window.navigator.webkitGetUserMedia ||
@@ -323,4 +355,4 @@ module.exports = function (constraints, cb) {
     });
 };
 
-},{}]},{},[5]);
+},{}]},{},[1,2,3,4,5,6,7]);

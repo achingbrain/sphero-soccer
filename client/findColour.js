@@ -1,6 +1,7 @@
-var getPosition = require('./getPosition')
+var getPosition = require('./getPosition'),
+  mapColour = require('./mapColour')
 
-var findColour = function(canvas, range, distance, event) {
+var findColour = function(canvas, range, sensitivity, event) {
   var position = getPosition(event);
 
   // get the average colour
@@ -23,26 +24,7 @@ var findColour = function(canvas, range, distance, event) {
   avgGreen = parseInt(avgGreen, 10)
   avgBlue = parseInt(avgBlue, 10)
 
-  return {
-    red: {
-      upper: avgRed + distance,
-      lower: avgRed - distance
-    },
-    green: {
-      upper: avgGreen + distance,
-      lower: avgGreen - distance
-    },
-    blue: {
-      upper: avgBlue + distance,
-      lower: avgBlue - distance
-    },
-    position: position,
-    average: {
-      red: avgRed,
-      green: avgGreen,
-      blue: avgBlue
-    }
-  }
+  return mapColour(avgRed, avgGreen, avgBlue, sensitivity)
 }
 
 module.exports = findColour

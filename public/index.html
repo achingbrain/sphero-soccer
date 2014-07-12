@@ -13,9 +13,14 @@
       <button id="sphero_startcalibration">Start calibration</button>
       <button id="sphero_stopcalibration">Stop calibration</button>
     </form>
+    <form>
+      <h1>Colours</h1>
+      <p>Sensitivity <span id="sensitivity"></span></p>
+      <input id="colour_sensitivity" type="range" min="0" max="255" value="50" />
+    </form>
     <ul id="players"></ul>
     <script src="./jquery-1.11.0.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src='./sphero.js'></script>
+    <script src='./index.js'></script>
   </body>
 </html>

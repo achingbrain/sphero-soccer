@@ -22,7 +22,7 @@ module.exports = function(grunt) {
     browserify: {
       dist: {
         files: {
-          'public/index.js': ['client/index.js'],
+          'public/index.js': ['client/**/*.js'],
         }
       }
     },
@@ -37,7 +37,7 @@ module.exports = function(grunt) {
     },
     open: {
       all: {
-        path: 'http://localhost:8081/index.html'
+        path: 'http://localhost:8081'
       }
 
     }
