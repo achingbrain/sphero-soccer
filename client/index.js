@@ -11,10 +11,13 @@ var teams = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
 var ball // {red: {lower: int, upper: in}, green: {lower...}}
 
 // how similar a colour should be to the selected hue - RGB values should be +/- this
-var sensitivity = 50
+var sensitivity = 0.2
 
 // how large a sample area under the mouse click to use to get an average colour
 var range = 20
+
+// how close groups should be before they are joined
+var join_distance = 10
 
 var init = function() {
   var canvas = new Canvas('c')
@@ -36,16 +39,14 @@ var init = function() {
 
     var pixels = context.getImageData(0, 0, width, height);
 
-    var blobs = findBlobs(pixels, width, height, [ball].concat(teams))
+    var blobs = findBlobs(pixels, width, height, sensitivity, join_distance, [ball].concat(teams))
 
     blobs.forEach(function(blob) {
       var coordinates = blob.coordinates
 
-      console.info('coordinates', coordinates)
-
       context.beginPath()
-      //context.lineWidth = 5
-      //context.strokeStyle = 'red'
+      context.lineWidth = '5'
+      context.strokeStyle = 'red'
       context.rect(coordinates.topLeft.x, coordinates.topLeft.y,
         coordinates.bottomRight.x - coordinates.topLeft.x,
         coordinates.bottomRight.y - coordinates.topLeft.y);
@@ -109,20 +110,30 @@ var init = function() {
   })
 
   $('#colour_sensitivity').on('change', function(event) {
-    sensitivity = $('#colour_sensitivity').val()
+    var input = $('#colour_sensitivity').val()
+    sensitivity = parseFloat(input)
 
     if(ball) {
-      ball = mapColour(ball.average.red, ball.average.green, ball.average.blue, sensitivity)
+      ball = mapColour(ball.average.red, ball.average.green, ball.average.blue, ball.average.alpha, sensitivity)
     }
 
     for(var i = 0; i < teams.length; i++) {
-      teams[i] = mapColour(teams[i].average.red, teams[i].average.green, teams[i].average.blue, sensitivity)
+      teams[i] = mapColour(teams[i].average.red, teams[i].average.green, teams[i].average.blue, teams[i].average.alpha, sensitivity)
     }
 
-    $('#sensitivity').text(sensitivity)
+    $('#sensitivity').text(parseInt((100 * sensitivity)) + '%')
   })
 
-  $('#sensitivity').text(sensitivity)
+  $('#sensitivity').text(parseInt((100 * sensitivity)) + '%')
+
+  $('#join_distance').on('change', function(event) {
+    var input = $('#join_distance').val()
+    join_distance = parseInt(input)
+
+    $('#distance').text(join_distance + ' pixels')
+  })
+
+  $('#distance').text(join_distance + ' pixels')
 }
 
 init()

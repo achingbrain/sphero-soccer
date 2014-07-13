@@ -1,22 +1,23 @@
 
-module.exports = function(r, g, b, sensitivity) {
+module.exports = function(r, g, b, a, sensitivity) {
   return {
     red: {
-      upper: r + sensitivity,
-      lower: r - sensitivity
+      upper: r + (r * sensitivity),
+      lower: r - (r * sensitivity)
     },
     green: {
-      upper: g + sensitivity,
-      lower: g - sensitivity
+      upper: g + (g * sensitivity),
+      lower: g - (g * sensitivity)
     },
     blue: {
-      upper: b + sensitivity,
-      lower: b - sensitivity
+      upper: b + (b * sensitivity),
+      lower: b - (b * sensitivity)
     },
     average: {
       red: r,
       green: g,
-      blue: b
+      blue: b,
+      alpha: a
     }
   }
 }

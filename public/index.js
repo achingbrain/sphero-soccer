@@ -54,13 +54,19 @@ VideoBuffer.prototype.setStream = function(stream) {
 module.exports = VideoBuffer
 
 },{}],3:[function(require,module,exports){
+//var onecolor = require('onecolor')
 
 var colours = ['red', 'green', 'blue']
 
-module.exports = function(pixel, target) {
+module.exports = function(pixel, target, sensitivity) {
   if(!pixel || !target) {
     return false
   }
+
+  //var incoming = onecolor([pixel.red, pixel.green, pixel.blue, pixel.alpha])
+  //var aim = onecolor([target.average.red, target.average.green, target.average.blue, target.average.alpha])
+
+  //return incoming.equals(aim, sensitivity)
 
   var matches = 0
 
@@ -187,7 +193,7 @@ function hasBlobForTarget(other, target) {
   return undefined
 }
 
-var findBlobs = function(pixels, width, height, targets) {
+var findBlobs = function(pixels, width, height, sensitivity, join_distance, targets) {
   var blobs = []
   var pixelBuffer = new PixelBuffer(pixels, width, height)
 /*
@@ -222,7 +228,7 @@ var findBlobs = function(pixels, width, height, targets) {
 
         var pixel = pixelBuffer.get(row, column)
 
-        if(colourMatch(pixel, target)) {
+        if(colourMatch(pixel, target, sensitivity)) {
           // do any of the surrounding pixels match the same colour?
           var west = pixelBuffer.west(pixel)
           var northWest = pixelBuffer.northWest(pixel)
@@ -245,13 +251,72 @@ var findBlobs = function(pixels, width, height, targets) {
     }
   }
 
-  var output = blobs.filter(function(blob) {
-    return blob.size > 10
+  // join blobs together if they are close
+  var joined = [].concat(blobs)
+
+  // pixels
+  var distance = join_distance
+
+  for(var i = 0; i < joined.length; i++) {
+    var blob = joined[i]
+
+    for(var k = 0; k < joined.length; k++) {
+      other = joined[k]
+
+      if(blob == other) {
+        continue
+      }
+
+      // increase the dimensions of the other group
+      var dims = {
+        topLeft: {
+          x: other.coordinates.topLeft.x - distance,
+          y: other.coordinates.topLeft.y - distance
+        },
+        bottomRight: {
+          x: other.coordinates.bottomRight.x + distance,
+          y: other.coordinates.bottomRight.y + distance
+        }
+      }
+
+      // do they overlap?
+      var overlap = !(
+        dims.bottomRight.x < blob.coordinates.topLeft.x ||
+        dims.topLeft.x > blob.coordinates.bottomRight.x ||
+        dims.bottomRight.y < blob.coordinates.topLeft.y ||
+        dims.topLeft.y > blob.coordinates.bottomRight.y
+      )
+
+      if(overlap) {
+        // join the other group to this one
+        blob.size += other.size
+        blob.coordinates.topLeft.x = Math.min(blob.coordinates.topLeft.x, other.coordinates.topLeft.x)
+        blob.coordinates.topLeft.y = Math.min(blob.coordinates.topLeft.y, other.coordinates.topLeft.y)
+        blob.coordinates.bottomRight.x = Math.max(blob.coordinates.bottomRight.x, other.coordinates.bottomRight.x)
+        blob.coordinates.bottomRight.y = Math.max(blob.coordinates.bottomRight.y, other.coordinates.bottomRight.y)
+
+        // remove the other group from the list
+        joined.splice(k, 1)
+        k--
+      }
+    }
+  }
+
+  var output = joined.filter(function(blob) {
+    return blob.size > 100
   })
 
-  console.info(blobs.length, 'blobs, output', output.length)
+  output = output.sort(function(a, b){
+    return b.size - a.size
+  })
 
-  return output
+  console.info(blobs.length, 'blobs, joined', joined.length, 'output', output.length)
+
+  if(output.length > 0) {
+    console.info('max', output[0].size, 'min', output[output.length - 1].size)
+  }
+
+  return joined
 }
 
 module.exports = findBlobs
@@ -264,7 +329,8 @@ var findColour = function(canvas, range, sensitivity, event) {
   var position = getPosition(event);
 
   // get the average colour
-  var avgRed = avgGreen = avgBlue = pixelCount = 0
+  var avgRed, avgGreen, avgBlue, avgAlpha, pixelCount
+  avgRed = avgGreen = avgBlue = avgAlpha = pixelCount = 0
   var pixels = canvas.buffer.getImageData(position.x - (range/2), position.y - (range/2), range, range);
   var pixelData = pixels.data;
 
@@ -272,18 +338,21 @@ var findColour = function(canvas, range, sensitivity, event) {
     avgRed += pixelData[i+0]
     avgGreen += pixelData[i+1]
     avgBlue += pixelData[i+2]
+    avgAlpha += pixelData[i+3]
     pixelCount++
   }
 
   avgRed /= pixelCount
   avgGreen /= pixelCount
   avgBlue /= pixelCount
+  avgAlpha /= pixelCount
 
   avgRed = parseInt(avgRed, 10)
   avgGreen = parseInt(avgGreen, 10)
   avgBlue = parseInt(avgBlue, 10)
+  avgAlpha = parseInt(avgAlpha, 10)
 
-  return mapColour(avgRed, avgGreen, avgBlue, sensitivity)
+  return mapColour(avgRed, avgGreen, avgBlue, avgAlpha, sensitivity)
 }
 
 module.exports = findColour
@@ -332,10 +401,13 @@ var teams = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
 var ball // {red: {lower: int, upper: in}, green: {lower...}}
 
 // how similar a colour should be to the selected hue - RGB values should be +/- this
-var sensitivity = 50
+var sensitivity = 0.2
 
 // how large a sample area under the mouse click to use to get an average colour
 var range = 20
+
+// how close groups should be before they are joined
+var join_distance = 10
 
 var init = function() {
   var canvas = new Canvas('c')
@@ -357,16 +429,14 @@ var init = function() {
 
     var pixels = context.getImageData(0, 0, width, height);
 
-    var blobs = findBlobs(pixels, width, height, [ball].concat(teams))
+    var blobs = findBlobs(pixels, width, height, sensitivity, join_distance, [ball].concat(teams))
 
     blobs.forEach(function(blob) {
       var coordinates = blob.coordinates
 
-      console.info('coordinates', coordinates)
-
       context.beginPath()
-      //context.lineWidth = 5
-      //context.strokeStyle = 'red'
+      context.lineWidth = '5'
+      context.strokeStyle = 'red'
       context.rect(coordinates.topLeft.x, coordinates.topLeft.y,
         coordinates.bottomRight.x - coordinates.topLeft.x,
         coordinates.bottomRight.y - coordinates.topLeft.y);
@@ -430,44 +500,55 @@ var init = function() {
   })
 
   $('#colour_sensitivity').on('change', function(event) {
-    sensitivity = $('#colour_sensitivity').val()
+    var input = $('#colour_sensitivity').val()
+    sensitivity = parseFloat(input)
 
     if(ball) {
-      ball = mapColour(ball.average.red, ball.average.green, ball.average.blue, sensitivity)
+      ball = mapColour(ball.average.red, ball.average.green, ball.average.blue, ball.average.alpha, sensitivity)
     }
 
     for(var i = 0; i < teams.length; i++) {
-      teams[i] = mapColour(teams[i].average.red, teams[i].average.green, teams[i].average.blue, sensitivity)
+      teams[i] = mapColour(teams[i].average.red, teams[i].average.green, teams[i].average.blue, teams[i].average.alpha, sensitivity)
     }
 
-    $('#sensitivity').text(sensitivity)
+    $('#sensitivity').text(parseInt((100 * sensitivity)) + '%')
   })
 
-  $('#sensitivity').text(sensitivity)
+  $('#sensitivity').text(parseInt((100 * sensitivity)) + '%')
+
+  $('#join_distance').on('change', function(event) {
+    var input = $('#join_distance').val()
+    join_distance = parseInt(input)
+
+    $('#distance').text(join_distance + ' pixels')
+  })
+
+  $('#distance').text(join_distance + ' pixels')
 }
 
 init()
 
 },{"./Canvas":1,"./VideoBuffer":2,"./colourMatch":3,"./findBlobs":4,"./findColour":5,"./getPosition":6,"./mapColour":8,"getusermedia":10}],8:[function(require,module,exports){
 
-module.exports = function(r, g, b, sensitivity) {
+module.exports = function(r, g, b, a, sensitivity) {
   return {
     red: {
-      upper: r + sensitivity,
-      lower: r - sensitivity
+      upper: r + (r * sensitivity),
+      lower: r - (r * sensitivity)
     },
     green: {
-      upper: g + sensitivity,
-      lower: g - sensitivity
+      upper: g + (g * sensitivity),
+      lower: g - (g * sensitivity)
     },
     blue: {
-      upper: b + sensitivity,
-      lower: b - sensitivity
+      upper: b + (b * sensitivity),
+      lower: b - (b * sensitivity)
     },
     average: {
       red: r,
       green: g,
-      blue: b
+      blue: b,
+      alpha: a
     }
   }
 }
