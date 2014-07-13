@@ -7,6 +7,7 @@ onmessage = function(event) {
     event.data.height,
     event.data.sensitivity,
     event.data.join_distance,
+    event.data.increment,
     event.data.targets
   )
 

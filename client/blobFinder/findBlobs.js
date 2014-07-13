@@ -1,11 +1,12 @@
 var colourMatch = require('./colourMatch')
 
-var PixelBuffer = function(pixels, width, height) {
+var PixelBuffer = function(pixels, width, height, increment) {
   this._pixelData = pixels
   this._rowSize = this._pixelData.length / height
   this._pixels = []
   this._width = width
   this._height = height
+  this._increment = increment
 }
 
 PixelBuffer.prototype.get = function(row, column) {
@@ -43,35 +44,35 @@ PixelBuffer.prototype.get = function(row, column) {
 }
 
 PixelBuffer.prototype.north = function(pixel) {
-  return this.get(pixel.y - 1, pixel.x)
+  return this.get(pixel.y - this._increment, pixel.x)
 }
 
 PixelBuffer.prototype.northEast = function(pixel) {
-  return this.get(pixel.y - 1, pixel.x + 1)
+  return this.get(pixel.y - this._increment, pixel.x + this._increment)
 }
 
 PixelBuffer.prototype.east = function(pixel) {
-  return this.get(pixel.y, pixel.x + 1)
+  return this.get(pixel.y, pixel.x + this._increment)
 }
 
 PixelBuffer.prototype.southEast = function(pixel) {
-  return this.get(pixel.y + 1, pixel.x + 1)
+  return this.get(pixel.y + this._increment, pixel.x + this._increment)
 }
 
 PixelBuffer.prototype.south = function(pixel) {
-  return this.get(pixel.y + 1, pixel.x)
+  return this.get(pixel.y + this._increment, pixel.x)
 }
 
 PixelBuffer.prototype.southWest = function(pixel) {
-  return this.get(pixel.y + 1, pixel.x - 1)
+  return this.get(pixel.y + this._increment, pixel.x - this._increment)
 }
 
 PixelBuffer.prototype.west = function(pixel) {
-  return this.get(pixel.y, pixel.x - 1)
+  return this.get(pixel.y, pixel.x - this._increment)
 }
 
 PixelBuffer.prototype.northWest = function(pixel) {
-  return this.get(pixel.y - 1, pixel.x - 1)
+  return this.get(pixel.y - this._increment, pixel.x - this._increment)
 }
 
 var Blob = function(target, width, height) {
@@ -113,9 +114,9 @@ function hasBlobForTarget(other, target) {
   return undefined
 }
 
-var findBlobs = function(pixels, width, height, sensitivity, join_distance, targets) {
+var findBlobs = function(pixels, width, height, sensitivity, join_distance, pixel_increment, targets) {
   var blobs = []
-  var pixelBuffer = new PixelBuffer(pixels, width, height)
+  var pixelBuffer = new PixelBuffer(pixels, width, height, pixel_increment)
 /*
   var otherCanvas = document.getElementById('c2')
   var otherContext = otherCanvas.getContext('2d')
@@ -138,8 +139,8 @@ var findBlobs = function(pixels, width, height, sensitivity, join_distance, targ
 
   otherContext.putImageData(otherPixelData, 0, 0);
 */
-  for(var row = 0; row < height; row++) {
-    for(var column = 0; column < width; column++) {
+  for(var row = 0; row < height; row += pixel_increment) {
+    for(var column = 0; column < width; column += pixel_increment) {
 
       targets.forEach(function(target) {
         if(!target) {

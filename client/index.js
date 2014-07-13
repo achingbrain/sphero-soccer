@@ -8,14 +8,17 @@ var getUserMedia = require('getusermedia'),
 var teams = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
 var ball // {red: {lower: int, upper: in}, green: {lower...}}
 
-// how similar a colour should be to the selected hue - RGB values should be +/- this
-var sensitivity = 0.2
+// how similar a colour should be to the selected hue - RGB values should be +/- this in %
+var sensitivity = 0.5
 
 // how large a sample area under the mouse click to use to get an average colour
 var range = 20
 
 // how close groups should be before they are joined
-var join_distance = 10
+var join_distance = 50
+
+// process every n pixels
+var increment = 2
 
 var init = function() {
   var blobs = []
@@ -71,6 +74,7 @@ var init = function() {
       height: height,
       sensitivity: sensitivity,
       join_distance: join_distance,
+      increment: increment,
       targets: [ball].concat(teams)
     }
 
@@ -158,6 +162,15 @@ var init = function() {
   })
 
   $('#distance').text(join_distance + ' pixels')
+
+  $('#pixel_increment').on('change', function(event) {
+    var input = $('#pixel_increment').val()
+    increment = parseInt(input)
+
+    $('#increment').text(increment + ' pixels')
+  })
+
+  $('#increment').text(increment + ' pixels')
 }
 
 init()
