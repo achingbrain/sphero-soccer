@@ -1,104 +1,111 @@
 var PixelBuffer = function(pixels, width, height) {
   this._pixelData = pixels.data
-  this._rowIndex = 0
-  this._columnIndex = 0
-
   this._rowSize = this._pixelData.length / height
   this._pixels = []
+  this._width = width
+  this._height = height
 }
 
 PixelBuffer.prototype.get = function(row, column) {
+  if(row < 0 || column < 0 || row > this._height || column > this._width) {
+    return null
+  }
+
   var index = this._rowSize * row
   index += (column * 4)
 
-  if(!this._pixels[index]) {
-    this._pixels[index] = {
+  if(index >= this._pixelData.length) {
+    return null
+  }
+
+  var pixel = this._pixels[index]
+
+  if(!pixel) {
+    pixel = {
       red: this._pixelData[index],
       green: this._pixelData[index + 1],
       blue: this._pixelData[index + 2],
       alpha: this._pixelData[index + 3],
-      x: row,
-      y: column
+      x: column,
+      y: row
     }
+
+    this._pixels[index] = pixel
   }
 
-  return this._pixels[index]
+  if(!pixel.red && pixel.red !== 0) {
+    pixel.toString()
+  }
+
+  return pixel
 }
 
 PixelBuffer.prototype.north = function(pixel) {
-  return this.get(pixel.x - 1, pixel.y)
+  return this.get(pixel.y - 1, pixel.x)
 }
 
 PixelBuffer.prototype.northEast = function(pixel) {
-  return this.get(pixel.x - 1, pixel.y + 1)
+  return this.get(pixel.y - 1, pixel.x + 1)
 }
 
 PixelBuffer.prototype.east = function(pixel) {
-  return this.get(pixel.x, pixel.y + 1)
+  return this.get(pixel.y, pixel.x + 1)
 }
 
 PixelBuffer.prototype.southEast = function(pixel) {
-  return this.get(pixel.x + 1, pixel.y + 1)
+  return this.get(pixel.y + 1, pixel.x + 1)
 }
 
 PixelBuffer.prototype.south = function(pixel) {
-  return this.get(pixel.x + 1, pixel.y)
+  return this.get(pixel.y + 1, pixel.x)
 }
 
 PixelBuffer.prototype.southWest = function(pixel) {
-  return this.get(pixel.x + 1, pixel.y - 1)
+  return this.get(pixel.y + 1, pixel.x - 1)
 }
 
 PixelBuffer.prototype.west = function(pixel) {
-  return this.get(pixel.x, pixel.y - 1)
+  return this.get(pixel.y, pixel.x - 1)
 }
 
 PixelBuffer.prototype.northWest = function(pixel) {
-  return this.get(pixel.x - 1, pixel.y - 1)
+  return this.get(pixel.y - 1, pixel.x - 1)
 }
 
-var Blob = function(target) {
+var Blob = function(target, width, height) {
   this.target = target
-  this._size = 0
-  this._topLeft = {x: 1280, y: 720}
-  this._bottomRight = {x: 0, y: 0}
-
-  Object.defineProperty(this, 'size', {
-    get: function() {
-      return this._size
-    }.bind(this)
-  })
-
-  Object.defineProperty(this, 'coordinates', {
-    get: function() {
-      return [this._topLeft, this._bottomRight]
-    }.bind(this)
-  })
+  this.size = 0
+  this.coordinates = {
+    topLeft: {x: width, y: height},
+    bottomRight: {x: 0, y: 0}
+  }
 }
 
 Blob.prototype.add = function(pixel) {
-  this._size++
+  this.size++
 
-  if(pixel.x < this._topLeft.x) {
-    this._topLeft.x = pixel.x
+  if(pixel.x < this.coordinates.topLeft.x) {
+    this.coordinates.topLeft.x = pixel.x
   }
 
-  if(pixel.y < this._topLeft.y) {
-    this._topLeft.y = pixel.y
+  if(pixel.y < this.coordinates.topLeft.y) {
+    this.coordinates.topLeft.y = pixel.y
   }
 
-  if(pixel.x > this._bottomRight.x) {
-    this._bottomRight.x = pixel.x
+  if(pixel.x > this.coordinates.bottomRight.x) {
+    this.coordinates.bottomRight.x = pixel.x
   }
 
-  if(pixel.y > this._bottomRight.y) {
-    this._bottomRight.y = pixel.y
+  if(pixel.y > this.coordinates.bottomRight.y) {
+    this.coordinates.bottomRight.y = pixel.y
   }
 }
 
 function hasBlobForTarget(other, target) {
-  if(other && other.blob) {
-    return other.blob
+  if(other) {
+    if(other.blob) {
+      return other.blob
+    }
   }
 
   return undefined
@@ -141,18 +148,17 @@ var findBlobs = function(pixels, width, height, targets) {
 
         if(colourMatch(pixel, target)) {
           // do any of the surrounding pixels match the same colour?
-          var blob = hasBlobForTarget(pixelBuffer.north(pixel), target) ||
-            hasBlobForTarget(pixelBuffer.northEast(pixel), target) ||
-            hasBlobForTarget(pixelBuffer.east(pixel), target) ||
-            hasBlobForTarget(pixelBuffer.southEast(pixel), target) ||
-            hasBlobForTarget(pixelBuffer.south(pixel), target) ||
-            hasBlobForTarget(pixelBuffer.southWest(pixel), target) ||
-            hasBlobForTarget(pixelBuffer.west(pixel), target) ||
-            hasBlobForTarget(pixelBuffer.northWest(pixel), target)
+          var west = pixelBuffer.west(pixel)
+          var northWest = pixelBuffer.northWest(pixel)
+          var north = pixelBuffer.north(pixel)
+
+          var blob = hasBlobForTarget(west, target) ||
+            hasBlobForTarget(northWest, target) ||
+            hasBlobForTarget(north, target)
 
           // if not, create a new blob
           if(!blob) {
-            blob = new Blob(target)
+            blob = new Blob(target, width, height)
             blobs.push(blob)
           }
 

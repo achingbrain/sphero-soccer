@@ -46,7 +46,9 @@ var init = function() {
       context.beginPath()
       //context.lineWidth = 5
       //context.strokeStyle = 'red'
-      context.rect(coordinates[0].x, coordinates[0].y, coordinates[1].x - coordinates[0].x, coordinates[1].y - coordinates[0].y);
+      context.rect(coordinates.topLeft.x, coordinates.topLeft.y,
+        coordinates.bottomRight.x - coordinates.topLeft.x,
+        coordinates.bottomRight.y - coordinates.topLeft.y);
       context.stroke();
     })
   })
