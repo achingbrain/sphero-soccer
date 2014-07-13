@@ -22,7 +22,8 @@ module.exports = function(grunt) {
     browserify: {
       dist: {
         files: {
-          'public/index.js': ['client/**/*.js'],
+          'public/index.js': ['client/index.js'],
+          'public/blob_finder.js': ['client/blobFinder/index.js']
         }
       }
     },

@@ -1,3 +1,5 @@
 node_modules
 .DS_Store
 public/sphero.js
+public/blob_finder.js
+

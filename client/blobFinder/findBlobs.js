@@ -1,5 +1,7 @@
+var colourMatch = require('./colourMatch')
+
 var PixelBuffer = function(pixels, width, height) {
-  this._pixelData = pixels.data
+  this._pixelData = pixels
   this._rowSize = this._pixelData.length / height
   this._pixels = []
   this._width = width
@@ -228,11 +230,11 @@ var findBlobs = function(pixels, width, height, sensitivity, join_distance, targ
     return b.size - a.size
   })
 
-  console.info(blobs.length, 'blobs, joined', joined.length, 'output', output.length)
+  /*console.info(blobs.length, 'blobs, joined', joined.length, 'output', output.length)
 
   if(output.length > 0) {
     console.info('max', output[0].size, 'min', output[output.length - 1].size)
-  }
+  }*/
 
   return joined
 }
