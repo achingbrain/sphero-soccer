@@ -57,17 +57,11 @@ module.exports = VideoBuffer
 
 var colours = ['red', 'green', 'blue']
 
-module.exports = function(red, green, blue, target) {
-  var subject = {
-    red: red,
-    green: green,
-    blue: blue
-  }
-
+module.exports = function(pixel, target) {
   var matches = 0
 
   colours.forEach(function(colour) {
-    if(subject[colour] > target[colour].lower && subject[colour] < target[colour].upper) {
+    if(pixel[colour] > target[colour].lower && pixel[colour] < target[colour].upper) {
       matches++
     }
   })
@@ -76,6 +70,183 @@ module.exports = function(red, green, blue, target) {
 }
 
 },{}],4:[function(require,module,exports){
+var PixelBuffer = function(pixels, width, height) {
+  this._pixelData = pixels.data
+  this._rowIndex = 0
+  this._columnIndex = 0
+
+  this._rowSize = this._pixelData.length / height
+  this._pixels = []
+}
+
+PixelBuffer.prototype.get = function(row, column) {
+  var index = this._rowSize * row
+  index += (column * 4)
+
+  if(!this._pixels[index]) {
+    this._pixels[index] = {
+      red: this._pixelData[index],
+      green: this._pixelData[index + 1],
+      blue: this._pixelData[index + 2],
+      alpha: this._pixelData[index + 3],
+      x: row,
+      y: column
+    }
+  }
+
+  return this._pixels[index]
+}
+
+PixelBuffer.prototype.north = function(pixel) {
+  return this.get(pixel.x - 1, pixel.y)
+}
+
+PixelBuffer.prototype.northEast = function(pixel) {
+  return this.get(pixel.x - 1, pixel.y + 1)
+}
+
+PixelBuffer.prototype.east = function(pixel) {
+  return this.get(pixel.x, pixel.y + 1)
+}
+
+PixelBuffer.prototype.southEast = function(pixel) {
+  return this.get(pixel.x + 1, pixel.y + 1)
+}
+
+PixelBuffer.prototype.south = function(pixel) {
+  return this.get(pixel.x + 1, pixel.y)
+}
+
+PixelBuffer.prototype.southWest = function(pixel) {
+  return this.get(pixel.x + 1, pixel.y - 1)
+}
+
+PixelBuffer.prototype.west = function(pixel) {
+  return this.get(pixel.x, pixel.y - 1)
+}
+
+PixelBuffer.prototype.northWest = function(pixel) {
+  return this.get(pixel.x - 1, pixel.y - 1)
+}
+
+var Blob = function(target) {
+  this.target = target
+  this._size = 0
+  this._topLeft = {x: 1280, y: 720}
+  this._bottomRight = {x: 0, y: 0}
+
+  Object.defineProperty(this, 'size', {
+    get: function() {
+      return this._size
+    }.bind(this)
+  })
+
+  Object.defineProperty(this, 'coordinates', {
+    get: function() {
+      return [this._topLeft, this._bottomRight]
+    }.bind(this)
+  })
+}
+
+Blob.prototype.add = function(pixel) {
+  this._size++
+
+  if(pixel.x < this._topLeft.x) {
+    this._topLeft.x = pixel.x
+  }
+
+  if(pixel.y < this._topLeft.y) {
+    this._topLeft.y = pixel.y
+  }
+
+  if(pixel.x > this._bottomRight.x) {
+    this._bottomRight.x = pixel.x
+  }
+
+  if(pixel.y > this._bottomRight.y) {
+    this._bottomRight.y = pixel.y
+  }
+}
+
+function hasBlobForTarget(other, target) {
+  if(other && other.blob) {
+    return other.blob
+  }
+
+  return undefined
+}
+
+var findBlobs = function(pixels, width, height, targets) {
+  var blobs = []
+  var pixelBuffer = new PixelBuffer(pixels, width, height)
+/*
+  var otherCanvas = document.getElementById('c2')
+  var otherContext = otherCanvas.getContext('2d')
+  var otherPixelData = otherContext.getImageData(0, 0, width, height);
+  var otherRowSize = otherPixelData.data.length / height
+
+  for(var row = 0; row < height; row++) {
+    for(var column = 0; column < width; column++) {
+      var pixel = pixelBuffer.get(row, column)
+
+      var offset = otherRowSize * row
+      offset += (column * 4)
+
+      otherPixelData.data[offset] = pixel.red
+      otherPixelData.data[offset + 1] = pixel.green
+      otherPixelData.data[offset + 2] = pixel.blue
+      otherPixelData.data[offset + 3] = pixel.alpha
+    }
+  }
+
+  otherContext.putImageData(otherPixelData, 0, 0);
+*/
+  for(var row = 0; row < height; row++) {
+    for(var column = 0; column < width; column++) {
+
+      targets.forEach(function(target) {
+        if(!target) {
+          return
+        }
+
+        var pixel = pixelBuffer.get(row, column)
+
+        if(colourMatch(pixel, target)) {
+          // do any of the surrounding pixels match the same colour?
+          var blob = hasBlobForTarget(pixelBuffer.north(pixel), target) ||
+            hasBlobForTarget(pixelBuffer.northEast(pixel), target) ||
+            hasBlobForTarget(pixelBuffer.east(pixel), target) ||
+            hasBlobForTarget(pixelBuffer.southEast(pixel), target) ||
+            hasBlobForTarget(pixelBuffer.south(pixel), target) ||
+            hasBlobForTarget(pixelBuffer.southWest(pixel), target) ||
+            hasBlobForTarget(pixelBuffer.west(pixel), target) ||
+            hasBlobForTarget(pixelBuffer.northWest(pixel), target)
+
+          // if not, create a new blob
+          if(!blob) {
+            blob = new Blob(target)
+            blobs.push(blob)
+          }
+
+          pixel.blob = blob
+          pixel.blob.add(pixel)
+        }
+      })
+    }
+  }
+
+  var output = blobs.filter(function(blob) {
+    return blob.size > 10
+  })
+
+  console.info(blobs.length, 'blobs, output', output.length)
+
+  return output
+}
+
+module.exports = findBlobs
+
+},{}],5:[function(require,module,exports){
 var getPosition = require('./getPosition'),
   mapColour = require('./mapColour')
 
@@ -107,7 +278,7 @@ var findColour = function(canvas, range, sensitivity, event) {
 
 module.exports = findColour
 
-},{"./getPosition":5,"./mapColour":7}],5:[function(require,module,exports){
+},{"./getPosition":6,"./mapColour":8}],6:[function(require,module,exports){
 
 module.exports = function getPosition(e) {
   //this section is from http://www.quirksmode.org/js/events_properties.html
@@ -137,14 +308,15 @@ module.exports = function getPosition(e) {
   return {"x": x, "y": y}
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var getUserMedia = require('getusermedia'),
   getPosition = require('./getPosition'),
   Canvas = require('./Canvas')
   VideoBuffer = require('./VideoBuffer'),
   findColour = require('./findColour'),
   colourMatch = require('./colourMatch'),
-  mapColour = require('./mapColour')
+  mapColour = require('./mapColour'),
+  findBlobs = require('./findBlobs')
 
 var teams = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
 var ball // {red: {lower: int, upper: in}, green: {lower...}}
@@ -174,23 +346,20 @@ var init = function() {
     count = 0
 
     var pixels = context.getImageData(0, 0, width, height);
-    var pixelData = pixels.data;
 
-    for (var i = 0; i < pixelData.length; i+=4) {
-      var r = pixelData[i + 0], g = pixelData[i + 1], b = pixelData[i + 2]
+    var blobs = findBlobs(pixels, width, height, [ball].concat(teams))
 
-      if(ball && colourMatch(r, b, b, ball)) {
+    blobs.forEach(function(blob) {
+      var coordinates = blob.coordinates
 
-        var average = parseInt((r+g+b)/3);
-        pixelData[parseInt(i+0)]=average;
-        pixelData[parseInt(i+1)]=average;
-        pixelData[parseInt(i+2)]=average;
-        pixelData[parseInt(i+3)]=255;
-      }
-    }
+      console.info('coordinates', coordinates)
 
-    pixels.data = pixelData;
-    context.putImageData(pixels, 0, 0);
+      context.beginPath()
+      //context.lineWidth = 5
+      //context.strokeStyle = 'red'
+      context.rect(coordinates[0].x, coordinates[0].y, coordinates[1].x - coordinates[0].x, coordinates[1].y - coordinates[0].y);
+      context.stroke();
+    })
   })
 
   function draw() {
@@ -267,7 +436,7 @@ var init = function() {
 
 init()
 
-},{"./Canvas":1,"./VideoBuffer":2,"./colourMatch":3,"./findColour":4,"./getPosition":5,"./mapColour":7,"getusermedia":8}],7:[function(require,module,exports){
+},{"./Canvas":1,"./VideoBuffer":2,"./colourMatch":3,"./findBlobs":4,"./findColour":5,"./getPosition":6,"./mapColour":8,"getusermedia":10}],8:[function(require,module,exports){
 
 module.exports = function(r, g, b, sensitivity) {
   return {
@@ -291,7 +460,31 @@ module.exports = function(r, g, b, sensitivity) {
   }
 }
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
+
+function unique(arr) {
+/// Returns an object with the counts of unique elements in arr
+/// unique([1,2,1,1,1,2,3,4]) === { 1:4, 2:2, 3:1, 4:1 }
+
+    var value, counts = {};
+    var i, l = arr.length;
+
+    for(i=0; i<l; i+=1) {
+        value = arr[i];
+
+        if(counts[value]) {
+            counts[value] += 1
+        } else {
+            counts[value] = 1
+        }
+    }
+
+    return counts
+}
+
+module.exports = unique
+
+},{}],10:[function(require,module,exports){
 // getUserMedia helper by @HenrikJoreteg
 var func = (window.navigator.getUserMedia ||
             window.navigator.webkitGetUserMedia ||
@@ -355,4 +548,4 @@ module.exports = function (constraints, cb) {
     });
 };
 
-},{}]},{},[1,2,3,4,5,6,7]);
+},{}]},{},[1,2,3,4,5,6,7,8,9]);

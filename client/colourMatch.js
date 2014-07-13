@@ -1,17 +1,11 @@
 
 var colours = ['red', 'green', 'blue']
 
-module.exports = function(red, green, blue, target) {
-  var subject = {
-    red: red,
-    green: green,
-    blue: blue
-  }
-
+module.exports = function(pixel, target) {
   var matches = 0
 
   colours.forEach(function(colour) {
-    if(subject[colour] > target[colour].lower && subject[colour] < target[colour].upper) {
+    if(pixel[colour] > target[colour].lower && pixel[colour] < target[colour].upper) {
       matches++
     }
   })

@@ -4,7 +4,8 @@ var getUserMedia = require('getusermedia'),
   VideoBuffer = require('./VideoBuffer'),
   findColour = require('./findColour'),
   colourMatch = require('./colourMatch'),
-  mapColour = require('./mapColour')
+  mapColour = require('./mapColour'),
+  findBlobs = require('./findBlobs')
 
 var teams = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
 var ball // {red: {lower: int, upper: in}, green: {lower...}}
@@ -34,23 +35,20 @@ var init = function() {
     count = 0
 
     var pixels = context.getImageData(0, 0, width, height);
-    var pixelData = pixels.data;
 
-    for (var i = 0; i < pixelData.length; i+=4) {
-      var r = pixelData[i + 0], g = pixelData[i + 1], b = pixelData[i + 2]
+    var blobs = findBlobs(pixels, width, height, [ball].concat(teams))
 
-      if(ball && colourMatch(r, b, b, ball)) {
+    blobs.forEach(function(blob) {
+      var coordinates = blob.coordinates
 
-        var average = parseInt((r+g+b)/3);
-        pixelData[parseInt(i+0)]=average;
-        pixelData[parseInt(i+1)]=average;
-        pixelData[parseInt(i+2)]=average;
-        pixelData[parseInt(i+3)]=255;
-      }
-    }
+      console.info('coordinates', coordinates)
 
-    pixels.data = pixelData;
-    context.putImageData(pixels, 0, 0);
+      context.beginPath()
+      //context.lineWidth = 5
+      //context.strokeStyle = 'red'
+      context.rect(coordinates[0].x, coordinates[0].y, coordinates[1].x - coordinates[0].x, coordinates[1].y - coordinates[0].y);
+      context.stroke();
+    })
   })
 
   function draw() {
