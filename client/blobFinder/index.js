@@ -1,6 +1,7 @@
-var findBlobs = require('./findBlobs')
 
-onmessage = function(event) {
+
+workerCallback = function(event) {
+
   var blobs = findBlobs(
     event.data.pixels,
     event.data.width,
@@ -12,4 +13,37 @@ onmessage = function(event) {
   )
 
   postMessage(blobs);
+}
+
+onmessage = function(event) {
+  var workers = 1
+  var blobs = []
+
+  for(var i = 0; i < workers; i++) {
+    var worker = new Worker('blob_finder_worker.js')
+    worker.onmessage = function(event) {
+      blobs = data.concat(event.data.blobs)
+
+      workers--
+
+      if(workers != 0) {
+        // still waiting for other workers
+        return
+      }
+
+      postMessage(blobs);
+    }
+
+    var message = {
+      pixels: event.data.pixels,
+      width: event.data.width,
+      height: event.data.height,
+      sensitivity: event.data.sensitivity,
+      join_distance: vent.data.join_distance,
+      increment: event.data.increment,
+      targets: event.data.targets
+    }
+
+    worker.postMessage(message)
+  }
 };

@@ -23,7 +23,9 @@ module.exports = function(grunt) {
       dist: {
         files: {
           'public/index.js': ['client/index.js'],
-          'public/blob_finder.js': ['client/blobFinder/index.js']
+          'public/blob_finder.js': ['client/blobFinder/index.js'],
+          'public/blob_finder_worker.js': ['client/blobFinder/worker/index.js'],
+          'public/pixel_data_splitter.js': ['client/pixelDataSplitter/index.js']
         }
       }
     },
