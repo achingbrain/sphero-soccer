@@ -25,10 +25,17 @@ var blobEmitter = new BlobEmitter()
 
 var init = function() {
   var blobs = []
+  var blobFreq = 0
 
   blobEmitter.on('blobs', function(found) {
     blobs = found
+    blobFreq++
   })
+
+  setInterval(function() {
+    $('#fps').text(blobFreq + ' fps')
+    blobFreq = 0
+  }, 1000)
 
   var canvas = new Canvas('c')
   var videoBuffer = new VideoBuffer(canvas.width, canvas.height)

@@ -13,7 +13,7 @@ function hasBlobForTarget(other, target) {
   return undefined
 }
 
-var findBlobs = function(pixels, width, height, sensitivity, join_distance, pixel_increment, targets, heightOffset) {
+var findBlobs = function(pixels, width, height, sensitivity, pixel_increment, targets, heightOffset) {
   var blobs = []
   var pixelBuffer = new PixelBuffer(pixels, width, height, pixel_increment)
 
@@ -45,9 +45,6 @@ var findBlobs = function(pixels, width, height, sensitivity, join_distance, pixe
       })
     }
   }
-
-  // join blobs together if they are close
-  blobs = joinBlobs(join_distance, blobs)
 
   // add height offset to blobs
   blobs.forEach(function(blob) {

@@ -48,8 +48,6 @@ BlobEmitter.prototype.setPixelData = function(context, width, height, sensitivit
   this.once('all-workers-complete', function() {
     var blobs = joinBlobs(join_distance, this._blobs[0], this._blobs[1], this._blobs[2], this._blobs[3])
 
-    console.info(blobs.length, 'blobs found')
-
     this._inRequest = false
 
     this.emit('blobs', blobs)
@@ -61,12 +59,15 @@ BlobEmitter.prototype.setPixelData = function(context, width, height, sensitivit
   for(var i = 0; i < NUM_SEGMENTS; i++) {
     var slice = Array.prototype.slice.call(pixelData, i * boundary, (i * boundary) + boundary)
 
+    // Uint8Array is a transferable type - no copying needed
+    // to pass to a web worker
+    slice = new Uint8Array(slice)
+
     var message = {
       pixels: slice,
       width: width,
       height: height / NUM_SEGMENTS,
       sensitivity: sensitivity,
-      join_distance: join_distance,
       increment: increment,
       targets: targets,
       heightOffset: i * (height / NUM_SEGMENTS)
