@@ -68,7 +68,8 @@ BlobEmitter.prototype.setPixelData = function(context, width, height, sensitivit
       sensitivity: sensitivity,
       join_distance: join_distance,
       increment: increment,
-      targets: targets
+      targets: targets,
+      heightOffset: i * (height / NUM_SEGMENTS)
     }
 
     this._blobFinders[i].postMessage(message)

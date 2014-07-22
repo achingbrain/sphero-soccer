@@ -55,7 +55,15 @@ var init = function() {
   var count = 0
 
   canvas.addRenderer(function(context, width, height) {
-    blobEmitter.setPixelData(context, width, height, sensitivity, join_distance, increment, teams)
+    var targets = []
+
+    if(ball) {
+      targets.push(ball)
+    }
+
+    targets = targets.concat(teams)
+
+    blobEmitter.setPixelData(context, width, height, sensitivity, join_distance, increment, targets)
   })
 
   function draw() {

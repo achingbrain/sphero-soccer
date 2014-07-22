@@ -8,7 +8,8 @@ onmessage = function(event) {
     event.data.sensitivity,
     event.data.join_distance,
     event.data.increment,
-    event.data.targets
+    event.data.targets,
+    event.data.heightOffset
   )
 
   postMessage(blobs);

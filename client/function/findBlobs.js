@@ -13,39 +13,14 @@ function hasBlobForTarget(other, target) {
   return undefined
 }
 
-var findBlobs = function(pixels, width, height, sensitivity, join_distance, pixel_increment, targets) {
+var findBlobs = function(pixels, width, height, sensitivity, join_distance, pixel_increment, targets, heightOffset) {
   var blobs = []
   var pixelBuffer = new PixelBuffer(pixels, width, height, pixel_increment)
-/*
-  var otherCanvas = document.getElementById('c2')
-  var otherContext = otherCanvas.getContext('2d')
-  var otherPixelData = otherContext.getImageData(0, 0, width, height);
-  var otherRowSize = otherPixelData.data.length / height
 
-  for(var row = 0; row < height; row++) {
-    for(var column = 0; column < width; column++) {
-      var pixel = pixelBuffer.get(row, column)
-
-      var offset = otherRowSize * row
-      offset += (column * 4)
-
-      otherPixelData.data[offset] = pixel.red
-      otherPixelData.data[offset + 1] = pixel.green
-      otherPixelData.data[offset + 2] = pixel.blue
-      otherPixelData.data[offset + 3] = pixel.alpha
-    }
-  }
-
-  otherContext.putImageData(otherPixelData, 0, 0);
-*/
   for(var row = 0; row < height; row += pixel_increment) {
     for(var column = 0; column < width; column += pixel_increment) {
 
       targets.forEach(function(target) {
-        if(!target) {
-          return
-        }
-
         var pixel = pixelBuffer.get(row, column)
 
         if(colourMatch(pixel, target, sensitivity)) {
@@ -72,7 +47,15 @@ var findBlobs = function(pixels, width, height, sensitivity, join_distance, pixe
   }
 
   // join blobs together if they are close
-  return joinBlobs(join_distance, blobs)
+  blobs = joinBlobs(join_distance, blobs)
+
+  // add height offset to blobs
+  blobs.forEach(function(blob) {
+    blob.coordinates.topLeft.y += heightOffset
+    blob.coordinates.bottomRight.y += heightOffset
+  })
+
+  return blobs
 }
 
 module.exports = findBlobs
