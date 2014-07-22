@@ -22,10 +22,10 @@ module.exports = function(grunt) {
     browserify: {
       dist: {
         files: {
-          'public/index.js': ['client/index.js'],
-          'public/blob_finder.js': ['client/blobFinder/index.js'],
-          'public/blob_finder_worker.js': ['client/blobFinder/worker/index.js'],
-          'public/pixel_data_splitter.js': ['client/pixelDataSplitter/index.js']
+          'public/index.js': ['client/main.js'],
+          'public/blob_finder_worker.js': ['client/blob_finder_worker.js'],
+          'public/blob_combiner_worker.js': ['client/blob_combiner_worker.js'],
+          'public/pixel_data_splitter_worker.js': ['client/pixel_data_splitter_worker.js']
         }
       }
     },

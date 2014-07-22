@@ -1,3 +1,4 @@
+
 var Canvas = function(id) {
   this._renderers = []
 

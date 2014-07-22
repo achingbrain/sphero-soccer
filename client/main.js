@@ -1,10 +1,10 @@
 var getUserMedia = require('getusermedia'),
-  getPosition = require('./getPosition'),
-  Canvas = require('./Canvas')
-  VideoBuffer = require('./VideoBuffer'),
-  findColour = require('./findColour'),
-  mapColour = require('./mapColour'),
-  BlobEmitter = require('./BlobEmitter')
+  getPosition = require('./function/getPosition'),
+  Canvas = require('./class/Canvas')
+  VideoBuffer = require('./class/VideoBuffer'),
+  findColour = require('./function/findColour'),
+  mapColour = require('./function/mapColour'),
+  BlobEmitter = require('./class/BlobEmitter')
 
 var teams = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
 var ball // {red: {lower: int, upper: in}, green: {lower...}}
@@ -29,15 +29,6 @@ var init = function() {
   blobEmitter.on('blobs', function(found) {
     blobs = found
   })
-
-
-  /*var blobRequests = 0
-  var blobFinder = new Worker('blob_finder.js')
-  blobFinder.onmessage = function(event) {
-    // the finder has given us blobs!
-    blobRequests--
-    blobs = event.data
-  }*/
 
   var canvas = new Canvas('c')
   var videoBuffer = new VideoBuffer(canvas.width, canvas.height)
@@ -65,33 +56,6 @@ var init = function() {
 
   canvas.addRenderer(function(context, width, height) {
     blobEmitter.setPixelData(context, width, height, sensitivity, join_distance, increment, teams)
-
-    /*
-    if(blobRequests != 0) {
-      return
-    }
-
-    var pixelData = context.getImageData(0, 0, width, height).data
-
-    // data.pixels is an "array like" object. Sigh
-    var pixels = []
-
-    for(var i = 0; i < pixelData.length; i++) {
-      pixels[i] = pixelData[i]
-    }
-
-    var message = {
-      pixels: pixels,
-      width: width,
-      height: height,
-      sensitivity: sensitivity,
-      join_distance: join_distance,
-      increment: increment,
-      targets: [ball].concat(teams)
-    }
-
-    blobRequests++
-    blobFinder.postMessage(message)*/
   })
 
   function draw() {

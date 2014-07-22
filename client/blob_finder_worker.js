@@ -1,4 +1,4 @@
-var findBlobs = require('./findBlobs')
+var findBlobs = require('./function/findBlobs')
 
 onmessage = function(event) {
   var blobs = findBlobs(
