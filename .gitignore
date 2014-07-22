@@ -1,5 +1,6 @@
 node_modules
 .DS_Store
 public/index.js
-public/blob_finder.js
-
+public/blob_finder_worker.js
+public/blob_combiner_worker.js
+public/pixel_data_splitter_worker.js
