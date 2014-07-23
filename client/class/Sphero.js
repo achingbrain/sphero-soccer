@@ -4,13 +4,15 @@ Sphero = function(socket, colour, blobEmitter) {
   this._socket = socket
   this._targetLocation = null
   this._colour = colour
+  this._moving = false
 
-  blobEmitter.on('blobs', this._onBlobs)
+  blobEmitter.on('blobs', this._onBlobs.bind(this))
 }
 
 Sphero.prototype._onBlobs = function(blobs) {
   this._ball = null
 
+  // find the ball
   blobs.some(function(blob) {
     if(blob.target.average.hex == this._colour.average.hex) {
       this._ball = blob
@@ -24,33 +26,37 @@ Sphero.prototype._onBlobs = function(blobs) {
   }
 
   if(this._targetLocation) {
-    // have we hit our target location yet?
-    var found = blobs.some(function(blob) {
-      if(blob.target.average.hex == this._colour.average.hex) {
-        if(contains(blob, this._ball)) {
-
-
-          return true
-        }
-      }
-    }.bind(this))
-
-    if(found) {
-      this._targetLocation = null
+    if(!this._moving) {
+      // move the ball to the target position
     }
 
-    return
+    // have we hit our target location yet?
+    if(this._ball.coordinates.topLeft.x < this._targetLocation.x &&
+      this._ball.coordinates.topLeft.y < this._targetLocation.y &&
+      this._ball.coordinates.bottomRight.x > (this._targetLocation.x + this._targetLocation.width) &&
+      this._ball.coordinates.bottomRight.y > (this._targetLocation.y + this._targetLocation.height)) {
+      this._targetLocation = null
+    }
   }
 }
 
 Sphero.prototype.getTargetLocation = function() {
   return this._targetLocation
+}
 
-  return {
-    x: 100,
-    y: 200,
-    width: (this._colour.bottomRight.x - this._colour.topLeft.x) - 2,
-    height: (this._colour.bottomRight.y - this._colour.topLeft.y) - 2,
+Sphero.prototype.moveTo = function(x, y) {
+  if(!this._ball) {
+    return
+  }
+
+  var width = (this._ball.coordinates.bottomRight.x - this._ball.coordinates.topLeft.x) / 2
+  var height = (this._ball.coordinates.bottomRight.y - this._ball.coordinates.topLeft.y) / 2
+
+  this._targetLocation = {
+    x: x - (width / 2),
+    y: y - (height / 2),
+    width: width,
+    height: height
   }
 }
 

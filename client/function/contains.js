@@ -1,6 +1,6 @@
 
 // returns true if blobA contains blobB
 module.exports = function(blobA, blobB) {
-  return blobA.topLeft.x < blobB.topLeft.x && blobA.topLeft.y < blobB.topLeft.y &&
-    blobA.bottomRight.x > blobB.bottomRight.x && blobA.bottomRight.y > blobB.bottomRight.y
+  return blobA.coordinates.topLeft.x < blobB.coordinates.topLeft.x && blobA.coordinates.topLeft.y < blobB.coordinates.topLeft.y &&
+    blobA.coordinates.bottomRight.x > blobB.coordinates.bottomRight.x && blobA.coordinates.bottomRight.y > blobB.coordinates.bottomRight.y
 }

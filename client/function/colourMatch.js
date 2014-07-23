@@ -8,7 +8,7 @@ module.exports = function(pixel, target, sensitivity) {
   var matches = 0
 
   colours.forEach(function(colour) {
-    if(pixel[colour] > target[colour].lower && pixel[colour] < target[colour].upper) {
+    if(pixel[colour] >= target[colour].lower && pixel[colour] <= target[colour].upper) {
       matches++
     }
   })

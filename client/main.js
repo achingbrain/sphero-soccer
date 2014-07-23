@@ -130,15 +130,21 @@ var init = function() {
     var bounds = findColour(canvas, range, sensitivity, event)
 
     // was it the ball or a team?
-    if(targets.length == 0) {
-      sphero = new Sphero(socket, bounds, blobEmitter)
+    if(targets.length < 3) {
+      if(targets.length == 0) {
+        sphero = new Sphero(socket, bounds, blobEmitter)
 
-      $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Ball</li>')
+        $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Ball</li>')
+      } else {
+        $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Team</li>')
+      }
+
+      targets.push(bounds)
     } else {
-      $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Team</li>')
+      if(sphero) {
+        sphero.moveTo(event.offsetX, event.offsetY)
+      }
     }
-
-    targets.push(bounds)
   })
 
   $('#colour_sensitivity').on('change', function(event) {

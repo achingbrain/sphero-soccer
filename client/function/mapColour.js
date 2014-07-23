@@ -12,16 +12,16 @@ function padHexString(n) {
 module.exports = function(r, g, b, a, sensitivity) {
   return {
     red: {
-      upper: r + (r * sensitivity),
-      lower: r - (r * sensitivity)
+      upper: parseInt(Math.min(r + (r * sensitivity), 255), 10),
+      lower: parseInt(Math.max(r * sensitivity, 0), 10)
     },
     green: {
-      upper: g + (g * sensitivity),
-      lower: g - (g * sensitivity)
+      upper: parseInt(Math.min(g + (g * sensitivity), 255), 10),
+      lower: parseInt(Math.max(g * sensitivity, 0), 10)
     },
     blue: {
-      upper: b + (b * sensitivity),
-      lower: b - (b * sensitivity)
+      upper: parseInt(Math.min(b + (b * sensitivity), 255), 10),
+      lower: parseInt(Math.max(b * sensitivity, 0), 10)
     },
     average: {
       red: r,
