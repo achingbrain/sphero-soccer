@@ -6,8 +6,7 @@ var getUserMedia = require('getusermedia'),
   mapColour = require('./function/mapColour'),
   BlobEmitter = require('./class/BlobEmitter')
 
-var teams = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
-var ball // {red: {lower: int, upper: in}, green: {lower...}}
+var targets = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
 
 // how similar a colour should be to the selected hue - RGB values should be +/- this in %
 var sensitivity = 0.5
@@ -44,6 +43,12 @@ var init = function() {
     context.drawImage(videoBuffer.element, 0, 0, width, height)
   })
 
+  var count = 0
+
+  canvas.addRenderer(function(context, width, height) {
+    blobEmitter.setPixelData(context, width, height, sensitivity, join_distance, increment, targets)
+  })
+
   canvas.addRenderer(function(context, width, height) {
     // if we've got any blobs, draw them on the screen
     blobs.forEach(function(blob) {
@@ -51,26 +56,12 @@ var init = function() {
 
       context.beginPath()
       context.lineWidth = '5'
-      context.strokeStyle = 'red'
+      context.strokeStyle = blob.target.average.hex
       context.rect(coordinates.topLeft.x, coordinates.topLeft.y,
         coordinates.bottomRight.x - coordinates.topLeft.x,
         coordinates.bottomRight.y - coordinates.topLeft.y);
       context.stroke();
     })
-  })
-
-  var count = 0
-
-  canvas.addRenderer(function(context, width, height) {
-    var targets = []
-
-    if(ball) {
-      targets.push(ball)
-    }
-
-    targets = targets.concat(teams)
-
-    blobEmitter.setPixelData(context, width, height, sensitivity, join_distance, increment, targets)
   })
 
   function draw() {
@@ -117,27 +108,21 @@ var init = function() {
     var bounds = findColour(canvas, range, sensitivity, event)
 
     // was it the ball or a team?
-    if(!ball) {
-      ball = bounds
-
+    if(targets.length == 0) {
       $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Ball</li>')
     } else {
-      teams.push(bounds)
-
       $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Team</li>')
     }
+
+    targets.push(bounds)
   })
 
   $('#colour_sensitivity').on('change', function(event) {
     var input = $('#colour_sensitivity').val()
     sensitivity = parseFloat(input)
 
-    if(ball) {
-      ball = mapColour(ball.average.red, ball.average.green, ball.average.blue, ball.average.alpha, sensitivity)
-    }
-
-    for(var i = 0; i < teams.length; i++) {
-      teams[i] = mapColour(teams[i].average.red, teams[i].average.green, teams[i].average.blue, teams[i].average.alpha, sensitivity)
+    for(var i = 0; i < targets.length; i++) {
+      targets[i] = mapColour(targets[i].average.red, targets[i].average.green, targets[i].average.blue, targets[i].average.alpha, sensitivity)
     }
 
     $('#sensitivity').text(parseInt((100 * sensitivity)) + '%')
@@ -158,10 +143,10 @@ var init = function() {
     var input = $('#pixel_increment').val()
     increment = parseInt(input)
 
-    $('#increment').text(increment + ' pixels')
+    $('#increment').text(increment)
   })
 
-  $('#increment').text(increment + ' pixels')
+  $('#increment').text(increment)
 }
 
 init()

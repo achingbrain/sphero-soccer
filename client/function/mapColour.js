@@ -1,4 +1,14 @@
 
+function padHexString(n) {
+  var output = ''
+
+  if(n < 0xF) {
+    output += '0'
+  }
+
+  return output + n.toString(16)
+}
+
 module.exports = function(r, g, b, a, sensitivity) {
   return {
     red: {
@@ -17,7 +27,8 @@ module.exports = function(r, g, b, a, sensitivity) {
       red: r,
       green: g,
       blue: b,
-      alpha: a
+      alpha: a,
+      hex: '#' + padHexString(r) + padHexString(g) + padHexString(b)
     }
   }
 }

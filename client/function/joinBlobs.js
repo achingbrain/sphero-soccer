@@ -20,6 +20,11 @@ module.exports = function() {
         continue
       }
 
+      // are they for the same target?
+      if(blob.target.average.hex != other.target.average.hex) {
+        continue
+      }
+
       // increase the dimensions of the other group
       var dims = {
         topLeft: {
