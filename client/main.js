@@ -4,7 +4,8 @@ var getUserMedia = require('getusermedia'),
   VideoBuffer = require('./class/VideoBuffer'),
   findColour = require('./function/findColour'),
   mapColour = require('./function/mapColour'),
-  BlobEmitter = require('./class/BlobEmitter')
+  BlobEmitter = require('./class/BlobEmitter'),
+  Sphero = require('./class/Sphero')
 
 var targets = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
 
@@ -21,6 +22,7 @@ var join_distance = 50
 var increment = 2
 
 var blobEmitter = new BlobEmitter()
+var sphero;
 
 var init = function() {
   var blobs = []
@@ -57,11 +59,31 @@ var init = function() {
       context.beginPath()
       context.lineWidth = '5'
       context.strokeStyle = blob.target.average.hex
-      context.rect(coordinates.topLeft.x, coordinates.topLeft.y,
+      context.rect(coordinates.topLeft.x,
+        coordinates.topLeft.y,
         coordinates.bottomRight.x - coordinates.topLeft.x,
         coordinates.bottomRight.y - coordinates.topLeft.y);
       context.stroke();
     })
+  })
+
+  canvas.addRenderer(function(context, width, height) {
+    if(!sphero) {
+      return
+    }
+
+    var spheroTargetLocation = sphero.getTargetLocation()
+
+    if(spheroTargetLocation) {
+      context.beginPath()
+      context.lineWidth = '5'
+      context.strokeStyle = 'yellow'
+      context.rect(spheroTargetLocation.x,
+        spheroTargetLocation.y,
+        spheroTargetLocation.width,
+        spheroTargetLocation.height);
+      context.stroke();
+    }
   })
 
   function draw() {
@@ -109,6 +131,8 @@ var init = function() {
 
     // was it the ball or a team?
     if(targets.length == 0) {
+      sphero = new Sphero(socket, blobEmitter)
+
       $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Ball</li>')
     } else {
       $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Team</li>')
