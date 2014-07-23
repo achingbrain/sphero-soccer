@@ -131,7 +131,7 @@ var init = function() {
 
     // was it the ball or a team?
     if(targets.length == 0) {
-      sphero = new Sphero(socket, blobEmitter)
+      sphero = new Sphero(socket, bounds, blobEmitter)
 
       $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Ball</li>')
     } else {
