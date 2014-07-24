@@ -24,6 +24,9 @@ var increment = 2
 var blobEmitter = new BlobEmitter()
 var sphero;
 
+var CANVAS_WIDTH = 1280
+var CANVAS_HEIGHT = 720
+
 var init = function() {
   var blobs = []
   var blobFreq = 0
@@ -62,8 +65,8 @@ var init = function() {
       context.rect(coordinates.topLeft.x,
         coordinates.topLeft.y,
         coordinates.bottomRight.x - coordinates.topLeft.x,
-        coordinates.bottomRight.y - coordinates.topLeft.y);
-      context.stroke();
+        coordinates.bottomRight.y - coordinates.topLeft.y)
+      context.stroke()
     })
   })
 
@@ -72,17 +75,36 @@ var init = function() {
       return
     }
 
-    var spheroTargetLocation = sphero.getTargetLocation()
+    var movementInfo = sphero.getMovementInfo()
 
-    if(spheroTargetLocation) {
+    if(!movementInfo) {
+      return
+    }
+
+    if(movementInfo.target) {
       context.beginPath()
       context.lineWidth = '5'
       context.strokeStyle = 'yellow'
-      context.rect(spheroTargetLocation.x,
-        spheroTargetLocation.y,
-        spheroTargetLocation.width,
-        spheroTargetLocation.height);
-      context.stroke();
+      context.rect(movementInfo.target.x, movementInfo.target.y, movementInfo.target.width, movementInfo.target.height)
+      context.stroke()
+    }
+
+    if(movementInfo.targetVector) {
+      context.beginPath()
+      context.lineWidth = '5'
+      context.strokeStyle = 'hotpink'
+      context.moveTo(movementInfo.targetVector.start.x, movementInfo.targetVector.start.y)
+      context.lineTo(movementInfo.targetVector.end.x, movementInfo.targetVector.end.y)
+      context.stroke()
+    }
+
+    if(movementInfo.currentVector) {
+      context.beginPath()
+      context.lineWidth = '5'
+      context.strokeStyle = 'green'
+      context.moveTo(movementInfo.currentVector.start.x, movementInfo.currentVector.start.y)
+      context.lineTo(movementInfo.currentVector.end.x, movementInfo.currentVector.end.y)
+      context.stroke()
     }
   })
 
@@ -95,8 +117,8 @@ var init = function() {
   getUserMedia({
       video: {
         mandatory: {
-          minWidth: 1280,
-          minHeight: 720
+          minWidth: CANVAS_WIDTH,
+          minHeight: CANVAS_HEIGHT
         }
       }
     }, function(error, stream) {
@@ -132,7 +154,7 @@ var init = function() {
     // was it the ball or a team?
     if(targets.length < 3) {
       if(targets.length == 0) {
-        sphero = new Sphero(socket, bounds, blobEmitter)
+        sphero = new Sphero(socket, bounds, blobEmitter, CANVAS_WIDTH, CANVAS_HEIGHT)
 
         $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Ball</li>')
       } else {

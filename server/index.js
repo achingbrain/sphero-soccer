@@ -35,7 +35,7 @@ io.sockets.on('connection', function(socket) {
   socket.on('sphero:roll', function(speed, heading, state) {
     withSphero(function(sphero) {
       sphero.roll(speed, heading, state)
-      socket.emit('sphero:info', 'Sphero rolling');
+      socket.emit('sphero:info', 'Sphero rolling - speed ' + speed + ' heading ' + heading + ' state ' + state);
     })
   })
 })

@@ -13,7 +13,7 @@ findSphero(function(error, port) {
     work: function(my) {
       sphero = my.sphero
 
-      my.sphero.setRandomColor()
+      my.sphero.setRGB(0, 0, 0)
     }
   }).start()
 })

@@ -68,11 +68,13 @@ module.exports = function() {
     return b.size - a.size
   })
 
-  /*console.info(blobs.length, 'blobs, joined', joined.length, 'output', output.length)
+  // calculate center points
+  output.forEach(function(blob) {
+    blob.center = {
+      x: blob.coordinates.topLeft.x + ((blob.coordinates.bottomRight.x - blob.coordinates.topLeft.x) / 2),
+      y: blob.coordinates.topLeft.y + ((blob.coordinates.bottomRight.y - blob.coordinates.topLeft.y) / 2),
+    }
+  })
 
-  if(output.length > 0) {
-    console.info('max', output[0].size, 'min', output[output.length - 1].size)
-  }*/
-
-  return joined
+  return output
 }
