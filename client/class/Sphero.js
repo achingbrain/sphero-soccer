@@ -10,6 +10,7 @@ Sphero = function(socket, colour, blobEmitter, width, height) {
   this._movementInterval = null
   this._ballDegrees = 0
   this._movementInfo = {}
+  this._evasionInterval = null
 
   blobEmitter.on('blobs', this._onBlobs.bind(this))
 }
@@ -190,6 +191,23 @@ Sphero.prototype.moveTo = function(x, y) {
       y: y
     }
   }
+}
+
+Sphero.prototype.start = function(x, y) {
+  if(this._evasionInterval) {
+    return
+  }
+
+  // every five seconds, work out the biggest space
+  // between all blobs and move the ball there
+  this._evasionInterval = setInterval(function() {
+
+  }, 5000)
+}
+
+Sphero.prototype.stop = function(x, y) {
+  clearInterval(this._evasionInterval)
+  this._evasionInterval = null
 }
 
 module.exports = Sphero
