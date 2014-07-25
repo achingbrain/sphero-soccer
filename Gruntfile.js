@@ -12,7 +12,7 @@ module.exports = function(grunt) {
         all: {
             options: {
                 bases: ['./public'],
-                port: 8081,
+                port: 16000,
                 hostname: "0.0.0.0",
                 livereload: true,
                 server: './server/index.js'
@@ -40,7 +40,7 @@ module.exports = function(grunt) {
     },
     open: {
       all: {
-        path: 'http://localhost:8081'
+        path: 'http://localhost:16000'
       }
 
     }

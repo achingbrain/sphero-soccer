@@ -87,6 +87,14 @@ Sphero.prototype._onBlobs = function(blobs) {
           y: parseInt((gradient * 1280) + c, 10)
         }
       }
+
+      // moving in the other direction..
+      if(this._ball.center.x < this._lastBall.center.x) {
+        var end = this._movementInfo.currentVector.end
+
+        this._movementInfo.currentVector.end = this._movementInfo.currentVector.start
+        this._movementInfo.currentVector.start = end
+      }
     }
 
     if(!this._movementInterval) {

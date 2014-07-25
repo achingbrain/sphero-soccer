@@ -4,7 +4,8 @@ var Cylon = require('cylon'),
 var sphero
 
 findSphero(function(error, port) {
-  if(error) throw error
+  //if(error) throw error
+  if(error) return console.error(error)
 
   Cylon.robot({
     connection: { name: 'sphero', adaptor: 'sphero', port: port },
