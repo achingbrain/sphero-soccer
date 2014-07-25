@@ -31,6 +31,8 @@ Sphero.prototype._onBlobs = function(blobs) {
     return
   }
 
+  this._movementInfo.currentPosition = this._ball.center
+
   if(this._movementInfo.target) {
     // how far from the edge before we stop
     var gap = 10
@@ -78,84 +80,43 @@ Sphero.prototype._onBlobs = function(blobs) {
       this._movementInfo.currentVector = {
         start: {
           x: 0,
-          y: c
+          y: parseInt(c, 10)
         },
         end: {
           x: 1280,
-          y: (gradient * 1280) + c
+          y: parseInt((gradient * 1280) + c, 10)
         }
       }
     }
 
-/*
     if(!this._movementInterval) {
       this._movementInterval = setInterval(function() {
-        // http://www.mathsisfun.com/algebra/distance-2-points.html
-        var hypotenuse = Math.sqrt(
-          Math.pow(this._movementVector.start.x - this._movementVector.end.x, 2) +
-          Math.pow(this._movementVector.start.y - this._movementVector.end.y, 2)
-        )
+        if(this._lastBall && this._ball) {
+          var angle = this._findAngle(this._movementInfo.currentVector.end, this._ball.center, this._movementInfo.targetVector.end)
 
-        var other
 
-        if(this._lastBall) {
-          // work out the ball orientation from the last known position of the ball
 
-          var gradient = (this._ball.center.x - this._lastBall.center.x) /
-            (this._ball.center.y - this._lastBall.center.y)
+          console.info('current vector end', this._movementInfo.currentVector.end.x, this._movementInfo.currentVector.end.y)
+          console.info('target', this._movementInfo.targetVector.end.x, this._movementInfo.targetVector.end.y)
 
-          // y = mx + c
-          // m = gradient
-          // c = y-intercept
-          // c = y - mx
-
-          this._currentVector = {
-            start: {
-              x: 0,
-              y: this._ball.center.y - (gradient * this._ball.center.x)
-            },
-            end: {
-              x: this._ball.center.x,
-              y: this._ball.center.y
-            }
-          }
-
-          //other = this._lastBall.center
-        } else {
-          // use the last direction we sent to the ball
-return
-          // http://math.stackexchange.com/a/39393
-          other = {
-            x: this._movementVector.start.x + (hypotenuse * Math.cos(this._ballDegrees)),
-            y: this._movementVector.start.y + (hypotenuse * Math.sin(this._ballDegrees))
-          }
+          console.info('heading', this._ballDegrees, 'to', angle)
         }
-
-        /*this._currentVector = {
-          start: this._movementVector.start,
-          end: other
-        }*/
-/*
-        var radians = this._findAngle(this._movementVector.end, this._movementVector.start, this._currentVector.end)
-        var angle = radians * 180 / Math.PI
-
-        console.info('heading', this._ballDegrees, 'to', angle)
-
-        this._ballDegrees = angle
-
-        //this._socket.emit('sphero:roll', 50, this._ballDegrees)
       }.bind(this), 1000)
-    }*/
+    }
   }
 }
 
 // http://stackoverflow.com/questions/17763392/how-to-calculate-in-javascript-angle-between-3-points
 Sphero.prototype._findAngle = function(A,B,C) {
-    var AB = Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2));
-    var BC = Math.sqrt(Math.pow(B.x-C.x,2)+ Math.pow(B.y-C.y,2));
-    var AC = Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
+    var AB = Math.sqrt(Math.pow(B.x - A.x, 2) + Math.pow(B.y - A.y, 2))
+    var BC = Math.sqrt(Math.pow(B.x - C.x, 2) + Math.pow(B.y - C.y, 2))
+    var AC = Math.sqrt(Math.pow(C.x - A.x, 2) + Math.pow(C.y - A.y, 2))
 
-    return Math.acos((BC*BC+AB*AB-AC*AC)/(2*BC*AB));
+    return this._toDegrees(Math.acos((BC * BC + AB * AB - AC * AC) / (2 * BC * AB)))
+}
+
+Sphero.prototype._toDegrees = function(radians) {
+  return radians * 180 / Math.PI
 }
 
 Sphero.prototype._rotate = function(coords, degrees) {

@@ -101,8 +101,15 @@ var init = function() {
     if(movementInfo.currentVector) {
       context.beginPath()
       context.lineWidth = '5'
-      context.strokeStyle = 'green'
+      context.strokeStyle = 'darkgreen'
       context.moveTo(movementInfo.currentVector.start.x, movementInfo.currentVector.start.y)
+      context.lineTo(movementInfo.currentPosition.x, movementInfo.currentPosition.y)
+      context.stroke()
+
+      context.beginPath()
+      context.lineWidth = '5'
+      context.strokeStyle = 'lightgreen'
+      context.moveTo(movementInfo.currentPosition.x, movementInfo.currentPosition.y)
       context.lineTo(movementInfo.currentVector.end.x, movementInfo.currentVector.end.y)
       context.stroke()
     }
