@@ -76,6 +76,14 @@ Sphero.prototype._onBlobs = function(blobs) {
       // c = y-intercept
       // c = y - mx
 
+      if(this._ball.center.y == this._lastBall.center.y &&
+        this._ball.center.y == this._lastBall.center.y) {
+        // dead stop, move slowly in a random direction
+        this._ballDegrees = parseInt(Math.random() * 360, 10)
+
+        return this._socket.emit('sphero:roll', this._speed / 2, this._ballDegrees)
+      }
+
       var gradient = (this._ball.center.y - this._lastBall.center.y) /
         (this._ball.center.x - this._lastBall.center.x)
 

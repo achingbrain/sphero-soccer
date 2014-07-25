@@ -38,6 +38,18 @@ io.sockets.on('connection', function(socket) {
       socket.emit('sphero:info', 'Sphero rolling - speed ' + speed + ' heading ' + heading + ' state ' + state);
     })
   })
+
+  socket.on('sphero:colour', function(colour) {
+    withSphero(function(sphero) {
+      if('random' == colour) {
+        sphero.setRandomColor()
+      } else {
+        sphero.setRGB(colour)
+      }
+
+      socket.emit('sphero:colour', 'Set Sphero colour to ' + colour);
+    })
+  })
 })
 
 exports = module.exports = server;

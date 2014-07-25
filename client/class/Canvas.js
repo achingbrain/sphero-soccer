@@ -29,9 +29,11 @@ Canvas.prototype.removeRenderer = function(renderer) {
 }
 
 Canvas.prototype.draw = function() {
-  this._renderers.forEach(function(renderer) {
-    renderer(this.buffer, this.width, this.height)
-  }.bind(this))
+  var l = this._renderers.length
+
+  for(var i = 0; i < l; i++) {
+    this._renderers[i](this.buffer, this.width, this.height)
+  }
 
   this._context.putImageData(this.buffer.getImageData(0, 0, this.width, this.height), 0, 0);
 }

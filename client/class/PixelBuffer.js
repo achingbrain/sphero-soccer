@@ -1,7 +1,8 @@
 
 var PixelBuffer = function(pixels, width, height, increment) {
   this._pixelData = pixels
-  this._rowSize = this._pixelData.length / height
+  this._pixelDataLength = this._pixelData.length
+  this._rowSize = this._pixelDataLength / height
   this._pixels = []
   this._width = width
   this._height = height
@@ -9,14 +10,10 @@ var PixelBuffer = function(pixels, width, height, increment) {
 }
 
 PixelBuffer.prototype.get = function(row, column) {
-  if(row < 0 || column < 0 || row > this._height || column > this._width) {
-    return null
-  }
-
   var index = this._rowSize * row
   index += (column * 4)
 
-  if(index >= this._pixelData.length) {
+  if(index >= this._pixelDataLength || index < 0) {
     return null
   }
 
@@ -33,10 +30,6 @@ PixelBuffer.prototype.get = function(row, column) {
     }
 
     this._pixels[index] = pixel
-  }
-
-  if(!pixel.red && pixel.red !== 0) {
-    pixel.toString()
   }
 
   return pixel

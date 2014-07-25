@@ -22,7 +22,7 @@ var join_distance = 50
 var increment = 2
 
 // how fast the sphero should move
-var sphero_speed = 30
+var sphero_speed = 60
 
 var blobEmitter = new BlobEmitter()
 var sphero;
@@ -139,7 +139,7 @@ var init = function() {
     window.requestAnimationFrame(draw)
   });
 
-  var socket = io(window.location.origin)
+  window.socket = io(window.location.origin)
   socket.on('connect', function() {
     socket.on('sphero:warn', function(message) {
       console.warn(message)

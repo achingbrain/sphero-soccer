@@ -3,16 +3,6 @@ var colourMatch = require('./colourMatch'),
   PixelBuffer = require('../class/PixelBuffer'),
   Blob = require('../class/Blob')
 
-function hasBlobForTarget(other, target) {
-  if(other) {
-    if(other.blob) {
-      return other.blob
-    }
-  }
-
-  return undefined
-}
-
 var findBlobs = function(pixels, width, height, sensitivity, pixel_increment, targets, heightOffset) {
   var blobs = []
   var pixelBuffer = new PixelBuffer(pixels, width, height, pixel_increment)
@@ -29,9 +19,9 @@ var findBlobs = function(pixels, width, height, sensitivity, pixel_increment, ta
           var northWest = pixelBuffer.northWest(pixel)
           var north = pixelBuffer.north(pixel)
 
-          var blob = hasBlobForTarget(west, target) ||
-            hasBlobForTarget(northWest, target) ||
-            hasBlobForTarget(north, target)
+          var blob = west && west.blob ? west.blob :
+              northWest && northWest.blob ? northWest.blob :
+                north && north.blob ? north.blob : null
 
           // if not, create a new blob
           if(!blob) {
