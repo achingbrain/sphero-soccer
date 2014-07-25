@@ -1,3 +1,4 @@
+var boxoverlap = require("boxoverlap")
 
 // join blobs together if they are close
 // arguments[0] = how many pixels is 'close'
@@ -37,15 +38,12 @@ module.exports = function() {
         }
       }
 
-      // do they overlap?
-      var overlap = !(
-        dims.bottomRight.x < blob.coordinates.topLeft.x ||
-        dims.topLeft.x > blob.coordinates.bottomRight.x ||
-        dims.bottomRight.y < blob.coordinates.topLeft.y ||
-        dims.topLeft.y > blob.coordinates.bottomRight.y
-      )
+      var overlap = boxoverlap([
+        [[dims.topLeft.x, dims.topLeft.y], [dims.bottomRight.x, dims.bottomRight.y]],
+        [[blob.coordinates.topLeft.x, blob.coordinates.topLeft.y], [blob.coordinates.bottomRight.x, blob.coordinates.bottomRight.y]]
+        ])
 
-      if(overlap) {
+      if(overlap.length > 0) {
         // join the other group to this one
         blob.size += other.size
         blob.coordinates.topLeft.x = Math.min(blob.coordinates.topLeft.x, other.coordinates.topLeft.x)

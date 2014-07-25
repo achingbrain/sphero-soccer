@@ -1,6 +1,7 @@
-var contains = require('../function/contains')
+var contains = require('../function/contains'),
+  boxoverlap = require("boxoverlap")
 
-Sphero = function(socket, colour, blobEmitter, width, height) {
+Sphero = function(socket, colour, blobEmitter, width, height, speed) {
   this._socket = socket
   this._targetLocation = null
   this._colour = colour
@@ -11,6 +12,7 @@ Sphero = function(socket, colour, blobEmitter, width, height) {
   this._ballDegrees = 0
   this._movementInfo = {}
   this._evasionInterval = null
+  this._speed = speed
 
   blobEmitter.on('blobs', this._onBlobs.bind(this))
 }
@@ -49,12 +51,13 @@ Sphero.prototype._onBlobs = function(blobs) {
       return
     }
 
-    // have we hit our target location yet?
-    if(this._ball.coordinates.topLeft.x < this._movementInfo.target.x &&
-      this._ball.coordinates.topLeft.y < this._movementInfo.target.y &&
-      this._ball.coordinates.bottomRight.x > (this._movementInfo.target.x + this._movementInfo.target.width) &&
-      this._ball.coordinates.bottomRight.y > (this._movementInfo.target.y + this._movementInfo.target.height)) {
+    var overlap = boxoverlap([
+      [[this._movementInfo.target.x, this._movementInfo.target.y], [this._movementInfo.target.x + this._movementInfo.target.width, this._movementInfo.target.y + this._movementInfo.target.height]],
+      [[this._ball.coordinates.topLeft.x, this._ball.coordinates.topLeft.y], [this._ball.coordinates.bottomRight.x, this._ball.coordinates.bottomRight.y]]
+      ])
 
+    // have we hit our target location yet?
+    if(overlap.length > 0) {
       this._stop()
 
       return
@@ -109,10 +112,14 @@ Sphero.prototype._onBlobs = function(blobs) {
 
           var heading = isLeft ? (360 - angle) : angle
 
+          if(isNaN(heading)) {
+            heading = 0
+          }
+
           console.info('turn %s by %d°, new heading: %d', isLeft ? 'left' : 'right', angle, heading)
 
           this._ballDegrees = heading
-          this._socket.emit('sphero:roll', 60, this._ballDegrees)
+          this._socket.emit('sphero:roll', this._speed, this._ballDegrees)
         }
       }.bind(this), 1000)
     }
@@ -176,10 +183,10 @@ Sphero.prototype.moveTo = function(x, y) {
     return
   }
 
-  var reduction = 8
+  var sizeModifier = 5
 
-  var width = (this._ball.coordinates.bottomRight.x - this._ball.coordinates.topLeft.x) / reduction
-  var height = (this._ball.coordinates.bottomRight.y - this._ball.coordinates.topLeft.y) / reduction
+  var width = (this._ball.coordinates.bottomRight.x - this._ball.coordinates.topLeft.x) * sizeModifier
+  var height = (this._ball.coordinates.bottomRight.y - this._ball.coordinates.topLeft.y) * sizeModifier
 
   this._movementInfo.target = {
     x: x - (width / 2),
@@ -201,13 +208,19 @@ Sphero.prototype.start = function(x, y) {
   // every five seconds, work out the biggest space
   // between all blobs and move the ball there
   this._evasionInterval = setInterval(function() {
+    // find the two blobs furthest apart
 
+    //
   }, 5000)
 }
 
 Sphero.prototype.stop = function(x, y) {
   clearInterval(this._evasionInterval)
   this._evasionInterval = null
+}
+
+Sphero.prototype.setSpeed = function(speed) {
+  this._speed = speed
 }
 
 module.exports = Sphero

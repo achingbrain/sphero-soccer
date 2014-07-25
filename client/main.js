@@ -21,6 +21,9 @@ var join_distance = 50
 // process every n pixels
 var increment = 2
 
+// how fast the sphero should move
+var sphero_speed = 30
+
 var blobEmitter = new BlobEmitter()
 var sphero;
 
@@ -161,7 +164,7 @@ var init = function() {
     // was it the ball or a team?
     if(targets.length < 3) {
       if(targets.length == 0) {
-        sphero = new Sphero(socket, bounds, blobEmitter, CANVAS_WIDTH, CANVAS_HEIGHT)
+        sphero = new Sphero(socket, bounds, blobEmitter, CANVAS_WIDTH, CANVAS_HEIGHT, sphero_speed)
 
         $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Ball</li>')
       } else {
@@ -206,6 +209,19 @@ var init = function() {
   })
 
   $('#increment').text(increment)
+
+  $('#sphero_speed').on('change', function(event) {
+    var input = $('#sphero_speed').val()
+    sphero_speed = parseInt(input)
+
+    $('#speed').text(sphero_speed)
+
+    if(sphero) {
+      sphero.setSpeed(sphero_speed)
+    }
+  })
+
+  $('#speed').text(sphero_speed)
 }
 
 init()
