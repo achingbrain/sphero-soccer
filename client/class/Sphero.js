@@ -101,13 +101,17 @@ Sphero.prototype._onBlobs = function(blobs) {
       this._movementInterval = setInterval(function() {
         if(this._lastBall && this._ball) {
           var angle = this._findAngle(this._movementInfo.currentVector.end, this._ball.center, this._movementInfo.targetVector.end)
+          angle = parseInt(angle, 10)
 
+          // there must be a smarter way of doing this
+          var isLeft = this._isLeft(this._movementInfo.currentVector.end, this._ball.center, this._movementInfo.targetVector.end)
 
+          var heading = isLeft ? (360 - angle) : angle
 
-          console.info('current vector end', this._movementInfo.currentVector.end.x, this._movementInfo.currentVector.end.y)
-          console.info('target', this._movementInfo.targetVector.end.x, this._movementInfo.targetVector.end.y)
+          console.info('turn %s by %d°, new heading: %d', isLeft ? 'left' : 'right', angle, heading)
 
-          console.info('heading', this._ballDegrees, 'to', angle)
+          this._ballDegrees = heading
+          this._socket.emit('sphero:roll', 60, this._ballDegrees)
         }
       }.bind(this), 1000)
     }
@@ -123,15 +127,36 @@ Sphero.prototype._findAngle = function(A,B,C) {
     return this._toDegrees(Math.acos((BC * BC + AB * AB - AC * AC) / (2 * BC * AB)))
 }
 
-Sphero.prototype._toDegrees = function(radians) {
-  return radians * 180 / Math.PI
+// http://www.gamedev.net/topic/508445-left-or-right-direction
+Sphero.prototype._isLeft = function(a, b, c) {
+
+  var dot = function(a, b) {
+    return (a.y * b.x) + (a.x * b.y)
+  }
+
+  var perp_dot = function(a, b) {
+    return ((a.y * b.x) * -1) + (a.x * b.y)
+  }
+
+  var sign = function(value) {
+    return (value < 0) ? -1 : (value > 0 ? 1 : 0)
+  }
+
+  var ba = {
+    x: a.x - b.x,
+    y: a.y - b.y
+  }
+
+  var bc = {
+    x: c.x - b.x,
+    y: c.y - b.y
+  }
+
+  return this._toDegrees(sign(perp_dot(ba, bc))) < 0
 }
 
-Sphero.prototype._rotate = function(coords, degrees) {
-  return {
-    x: (coords.x * Math.cos(degrees)) - (coords.y * Math.sin(degrees)),
-    y: (coords.x * Math.sin(degrees)) + (coords.y * Math.cos(degrees))
-  }
+Sphero.prototype._toDegrees = function(radians) {
+  return radians * 180 / Math.PI
 }
 
 Sphero.prototype.getMovementInfo = function() {
