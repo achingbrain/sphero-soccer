@@ -2,7 +2,7 @@ var EventEmitter = require('events').EventEmitter,
   util = require('util'),
   joinBlobs = require('../function/joinBlobs')
 
-var NUM_SEGMENTS = 8
+var NUM_SEGMENTS = 4
 
 var BlobEmitter = function() {
   EventEmitter.call(this)

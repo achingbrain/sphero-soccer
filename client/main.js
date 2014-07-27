@@ -5,7 +5,8 @@ var getUserMedia = require('getusermedia'),
   findColour = require('./function/findColour'),
   mapColour = require('./function/mapColour'),
   BlobEmitter = require('./class/BlobEmitter'),
-  Sphero = require('./class/Sphero')
+  Sphero = require('./class/Sphero'),
+  SpheroBrain = require('./class/SpheroBrain')
 
 var targets = [] // [{red: {lower: int, upper: in}, green: {lower...}}]
 
@@ -25,7 +26,8 @@ var increment = 2
 var sphero_speed = 60
 
 var blobEmitter = new BlobEmitter()
-var sphero;
+var sphero
+var spheroBrain
 
 var CANVAS_WIDTH = 1280
 var CANVAS_HEIGHT = 720
@@ -74,7 +76,7 @@ var init = function() {
   })
 
   canvas.addRenderer(function(context, width, height) {
-    if(!sphero) {
+    if(!sphero || !spheroBrain) {
       return
     }
 
@@ -84,21 +86,21 @@ var init = function() {
       return
     }
 
-    if(movementInfo.target) {
+    if(spheroBrain.target.topLeft) {
       context.beginPath()
       context.lineWidth = '5'
       context.strokeStyle = 'yellow'
-      context.rect(movementInfo.target.x, movementInfo.target.y, movementInfo.target.width, movementInfo.target.height)
+      context.rect(spheroBrain.target.topLeft.x, spheroBrain.target.topLeft.y, spheroBrain.target.width, spheroBrain.target.height)
       context.stroke()
-    }
 
-    if(movementInfo.targetVector) {
-      context.beginPath()
-      context.lineWidth = '5'
-      context.strokeStyle = 'hotpink'
-      context.moveTo(movementInfo.targetVector.start.x, movementInfo.targetVector.start.y)
-      context.lineTo(movementInfo.targetVector.end.x, movementInfo.targetVector.end.y)
-      context.stroke()
+      if(spheroBrain.target.vector) {
+        context.beginPath()
+        context.lineWidth = '5'
+        context.strokeStyle = 'hotpink'
+        context.moveTo(spheroBrain.target.vector.start.x, spheroBrain.target.vector.start.y)
+        context.lineTo(spheroBrain.target.vector.end.x, spheroBrain.target.vector.end.y)
+        context.stroke()
+      }
     }
 
     if(movementInfo.currentVector) {
@@ -118,8 +120,17 @@ var init = function() {
     }
   })
 
+  var count = 0
+
   function draw() {
-    canvas.draw()
+    count++
+
+    if(count == 10) {
+      canvas.draw()
+      count = 0
+    }
+
+
 
     window.requestAnimationFrame(draw)
   }
@@ -164,7 +175,8 @@ var init = function() {
     // was it the ball or a team?
     if(targets.length < 3) {
       if(targets.length == 0) {
-        sphero = new Sphero(socket, bounds, blobEmitter, CANVAS_WIDTH, CANVAS_HEIGHT, sphero_speed)
+        sphero = new Sphero(socket, bounds, sphero_speed, blobEmitter)
+        spheroBrain = new SpheroBrain(sphero, CANVAS_WIDTH, CANVAS_HEIGHT)
 
         $('#players').append('<li style="background-color: rgb(' + bounds.average.red + ', ' + bounds.average.green + ', ' + bounds.average.blue + ')">Ball</li>')
       } else {
@@ -173,8 +185,8 @@ var init = function() {
 
       targets.push(bounds)
     } else {
-      if(sphero) {
-        sphero.moveTo(event.offsetX, event.offsetY)
+      if(spheroBrain) {
+        spheroBrain.moveTo(event.offsetX, event.offsetY)
       }
     }
   })
@@ -217,7 +229,7 @@ var init = function() {
     $('#speed').text(sphero_speed)
 
     if(sphero) {
-      sphero.setSpeed(sphero_speed)
+      sphero.speed = sphero_speed
     }
   })
 

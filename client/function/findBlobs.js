@@ -10,7 +10,8 @@ var findBlobs = function(pixels, width, height, sensitivity, pixel_increment, ta
   for(var row = 0; row < height; row += pixel_increment) {
     for(var column = 0; column < width; column += pixel_increment) {
 
-      targets.forEach(function(target) {
+      for(var i = 0; i < targets.length; i++) {
+        var target = targets[i]
         var pixel = pixelBuffer.get(row, column)
 
         if(colourMatch(pixel, target, sensitivity)) {
@@ -32,7 +33,7 @@ var findBlobs = function(pixels, width, height, sensitivity, pixel_increment, ta
           pixel.blob = blob
           pixel.blob.add(pixel)
         }
-      })
+      }
     }
   }
 

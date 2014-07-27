@@ -1,21 +1,25 @@
-var contains = require('../function/contains'),
-  boxoverlap = require("boxoverlap")
+var EventEmitter = require('events').EventEmitter,
+  util = require('util')
 
-Sphero = function(socket, colour, blobEmitter, width, height, speed) {
+Sphero = function(socket, colour, speed, blobEmitter) {
+  EventEmitter.call(this)
+
   this._socket = socket
-  this._targetLocation = null
   this._colour = colour
-  this._movementVector = false
-  this._height = height
-  this._width = width
   this._movementInterval = null
-  this._ballDegrees = 0
   this._movementInfo = {}
   this._evasionInterval = null
-  this._speed = speed
 
-  blobEmitter.on('blobs', this._onBlobs.bind(this))
+  this.speed = speed
+
+  this._moving = false
+
+  //blobEmitter.on('blobs', this._onBlobs.bind(this))
+  blobEmitter.on('blobs', function(blobs) {
+    this._onBlobs(blobs)
+  }.bind(this))
 }
+util.inherits(Sphero, EventEmitter)
 
 Sphero.prototype._onBlobs = function(blobs) {
   this._lastBall = this._ball
@@ -30,167 +34,91 @@ Sphero.prototype._onBlobs = function(blobs) {
     }
   }.bind(this))
 
-  if(!this._ball) {
+  if(!this._ball || !this._lastBall) {
     return
   }
 
   this._movementInfo.currentPosition = this._ball.center
 
-  if(this._movementInfo.target) {
-    // how far from the edge before we stop
-    var gap = 10
+  var oldMoving = this._moving
 
-    // if we are about to go out of bounds, stop
-    if(this._ball.coordinates.topLeft.x <= gap ||
-      this._ball.coordinates.topLeft.y <= gap ||
-      this._ball.coordinates.bottomRight.x >= (this._width - gap) ||
-      this._ball.coordinates.bottomRight.y >= (this._height - gap)) {
+  this._moving = this._ball.center.x != this._lastBall.center.x &&
+    this._ball.center.y != this._lastBall.center.y
 
-      this._stop()
-
-      return
+  if(!this._moving) {
+    if(oldMoving) {
+      // was moving previously
+      this.emit('stopped', this, this._ball.center)
+    } else {
+      // still stopped
+      this.emit('stationary', this, this._ball.center)
     }
 
-    var overlap = boxoverlap([
-      [[this._movementInfo.target.x, this._movementInfo.target.y], [this._movementInfo.target.x + this._movementInfo.target.width, this._movementInfo.target.y + this._movementInfo.target.height]],
-      [[this._ball.coordinates.topLeft.x, this._ball.coordinates.topLeft.y], [this._ball.coordinates.bottomRight.x, this._ball.coordinates.bottomRight.y]]
-      ])
+    return
+  }
 
-    // have we hit our target location yet?
-    if(overlap.length > 0) {
-      this._stop()
+  // work out our current vector
+  if(this._lastBall) {
+    // http://www.mathsisfun.com/equation_of_line.html
+    // y = mx + c
+    // m = gradient
+    // c = y-intercept
+    // c = y - mx
 
-      return
-    }
+    var gradient = (this._ball.center.y - this._lastBall.center.y) /
+      (this._ball.center.x - this._lastBall.center.x)
 
-    // move the ball to the target position
-    this._movementInfo.targetVector = {
-      start: this._ball.center,
-      end: this._movementInfo.target.center
-    }
+    var c = this._ball.center.y - (gradient * this._ball.center.x)
 
-    if(this._lastBall) {
-      // http://www.mathsisfun.com/equation_of_line.html
-      // y = mx + c
-      // m = gradient
-      // c = y-intercept
-      // c = y - mx
-
-      if(this._ball.center.y == this._lastBall.center.y &&
-        this._ball.center.y == this._lastBall.center.y) {
-        // dead stop, move slowly in a random direction
-        this._ballDegrees = parseInt(Math.random() * 360, 10)
-
-        return this._socket.emit('sphero:roll', this._speed / 2, this._ballDegrees)
-      }
-
-      var gradient = (this._ball.center.y - this._lastBall.center.y) /
-        (this._ball.center.x - this._lastBall.center.x)
-
-      var c = this._ball.center.y - (gradient * this._ball.center.x)
-
-      this._movementInfo.currentVector = {
-        start: {
-          x: 0,
-          y: parseInt(c, 10)
-        },
-        end: {
-          x: 1280,
-          y: parseInt((gradient * 1280) + c, 10)
-        }
-      }
-
-      // moving in the other direction..
-      if(this._ball.center.x < this._lastBall.center.x) {
-        var end = this._movementInfo.currentVector.end
-
-        this._movementInfo.currentVector.end = this._movementInfo.currentVector.start
-        this._movementInfo.currentVector.start = end
+    this._movementInfo.currentVector = {
+      start: {
+        x: 0,
+        y: parseInt(c, 10)
+      },
+      end: {
+        x: 1280,
+        y: parseInt((gradient * 1280) + c, 10)
       }
     }
 
-    if(!this._movementInterval) {
-      this._movementInterval = setInterval(function() {
-        if(this._lastBall && this._ball) {
-          var angle = this._findAngle(this._movementInfo.currentVector.end, this._ball.center, this._movementInfo.targetVector.end)
-          angle = parseInt(angle, 10)
+    // moving in the other direction..
+    if(this._ball.center.x < this._lastBall.center.x) {
+      var end = this._movementInfo.currentVector.end
 
-          // there must be a smarter way of doing this
-          var isLeft = this._isLeft(this._movementInfo.currentVector.end, this._ball.center, this._movementInfo.targetVector.end)
-
-          var heading = isLeft ? (360 - angle) : angle
-
-          if(isNaN(heading)) {
-            heading = 0
-          }
-
-          console.info('turn %s by %d°, new heading: %d', isLeft ? 'left' : 'right', angle, heading)
-
-          this._ballDegrees = heading
-          this._socket.emit('sphero:roll', this._speed, this._ballDegrees)
-        }
-      }.bind(this), 1000)
+      this._movementInfo.currentVector.end = this._movementInfo.currentVector.start
+      this._movementInfo.currentVector.start = end
     }
   }
-}
 
-// http://stackoverflow.com/questions/17763392/how-to-calculate-in-javascript-angle-between-3-points
-Sphero.prototype._findAngle = function(A,B,C) {
-    var AB = Math.sqrt(Math.pow(B.x - A.x, 2) + Math.pow(B.y - A.y, 2))
-    var BC = Math.sqrt(Math.pow(B.x - C.x, 2) + Math.pow(B.y - C.y, 2))
-    var AC = Math.sqrt(Math.pow(C.x - A.x, 2) + Math.pow(C.y - A.y, 2))
-
-    return this._toDegrees(Math.acos((BC * BC + AB * AB - AC * AC) / (2 * BC * AB)))
-}
-
-// http://www.gamedev.net/topic/508445-left-or-right-direction
-Sphero.prototype._isLeft = function(a, b, c) {
-
-  var dot = function(a, b) {
-    return (a.y * b.x) + (a.x * b.y)
-  }
-
-  var perp_dot = function(a, b) {
-    return ((a.y * b.x) * -1) + (a.x * b.y)
-  }
-
-  var sign = function(value) {
-    return (value < 0) ? -1 : (value > 0 ? 1 : 0)
-  }
-
-  var ba = {
-    x: a.x - b.x,
-    y: a.y - b.y
-  }
-
-  var bc = {
-    x: c.x - b.x,
-    y: c.y - b.y
-  }
-
-  return this._toDegrees(sign(perp_dot(ba, bc))) < 0
-}
-
-Sphero.prototype._toDegrees = function(radians) {
-  return radians * 180 / Math.PI
+  this.emit('moving', this, this._ball.center, this._movementInfo.currentVector)
 }
 
 Sphero.prototype.getMovementInfo = function() {
   return this._movementInfo
 }
 
-Sphero.prototype._stop = function() {
-  clearInterval(this._movementInterval)
-  this._movementInterval = null
-  this._movementInfo = {}
-  this._socket.emit('sphero:stop')
+Sphero.prototype.getCurrentVector = function() {
+  return this._movementInfo.currentVector
 }
 
+Sphero.prototype.getCoordinates = function() {
+  if(this._ball) {
+    return this._ball.coordinates
+  }
+}
+
+Sphero.prototype.getPosition = function() {
+  if(this._ball) {
+    return this._ball.center
+  }
+}
+/*
 Sphero.prototype.moveTo = function(x, y) {
   if(!this._ball) {
     return
   }
 
+  // increase target size by this modifier
   var sizeModifier = 5
 
   var width = (this._ball.coordinates.bottomRight.x - this._ball.coordinates.topLeft.x) * sizeModifier
@@ -206,6 +134,14 @@ Sphero.prototype.moveTo = function(x, y) {
       y: y
     }
   }
+}*/
+
+Sphero.prototype.roll = function(heading, speed) {
+  if(!speed) {
+    speed = this.speed
+  }
+
+  this._socket.emit('sphero:roll', speed, heading)
 }
 
 Sphero.prototype.start = function(x, y) {
@@ -225,10 +161,16 @@ Sphero.prototype.start = function(x, y) {
 Sphero.prototype.stop = function(x, y) {
   clearInterval(this._evasionInterval)
   this._evasionInterval = null
+
+  clearInterval(this._movementInterval)
+  this._movementInterval = null
+
+  this._movementInfo = {}
+  this._socket.emit('sphero:stop')
 }
 
-Sphero.prototype.setSpeed = function(speed) {
-  this._speed = speed
+Sphero.prototype.setColour = function(colour) {
+  this._socket.emit('sphero:colour', colour)
 }
 
 module.exports = Sphero
