@@ -50,6 +50,13 @@ io.sockets.on('connection', function(socket) {
       socket.emit('sphero:colour', 'Set Sphero colour to ' + colour);
     })
   })
+
+  socket.on('sphero:stabilisation', function(value) {
+    withSphero(function(sphero) {
+      sphero.setStabalisation(value)
+      socket.emit('sphero:info', 'Sphero stabilisation ' + (value ? 'enabled' : 'disabled'));
+    })
+  })
 })
 
 exports = module.exports = server;

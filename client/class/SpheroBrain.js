@@ -11,11 +11,15 @@ SpheroBrain = function(sphero, width, height) {
   this.target = {}
 
   this._sphero.on('stopped', function(ball, position) {
+    if(!this.target.vector) {
+      return
+    }
+
     console.info('Moving ball in random direction')
 
     // dead stop, move slowly in a random direction
-    ball.roll(parseInt(Math.random() * 360, 10), ball.speed / 2)
-  })
+    ball.roll(parseInt(Math.random() * 360, 10))
+  }.bind(this))
 
   this._sphero.on('moving', function(ball, position, direction) {
     console.info('moving', direction)
@@ -42,7 +46,9 @@ SpheroBrain = function(sphero, width, height) {
     }
 
     if(!this.target.vector) {
-      return ball.stop()
+      ball.stop()
+      ball.turnOffStabilisation()
+      return
     }
 
     // have we hit our target location yet?
@@ -55,8 +61,9 @@ SpheroBrain = function(sphero, width, height) {
       console.info('Sphero hit target!')
 
       this.target = {}
-
-      return ball.stop()
+      ball.stop()
+      ball.turnOffStabilisation()
+      return
     }
 
     // update vector to target
@@ -181,10 +188,11 @@ SpheroBrain.prototype.moveTo = function(x, y) {
   }
 
   console.info('moving sphero forward')
+  this._sphero.turnOnStabilisation()
   this._sphero.roll(0)
 }
 
-SpheroBrain.prototype.start = function(x, y) {
+SpheroBrain.prototype.start = function() {
   if(this._evasionInterval) {
     return
   }
@@ -192,10 +200,22 @@ SpheroBrain.prototype.start = function(x, y) {
   // every five seconds, work out the biggest space
   // between all blobs and move the ball there
   this._evasionInterval = setInterval(function() {
-    // find the two blobs furthest apart
+    var rand = parseInt((Math.random() * 100), 10)
 
-    //
-  }, 5000)
+    if(rand > 90) {
+      console.info('Crazy Ivan!')
+      this.moveTo(
+        Math.floor(Math.random() * (this._width - 200)) + 101,
+        Math.floor(Math.random() * (this._height - 200)) + 101
+      )
+    }
+  }.bind(this), 5000)
+}
+
+SpheroBrain.prototype.stop = function() {
+  clearInterval(this._evasionInterval)
+
+  this._sphero.stop()
 }
 
 module.exports = SpheroBrain

@@ -169,11 +169,29 @@ var init = function() {
     })
   })
 
+  $('#sphero_start').on('click', function(event) {
+    if(spheroBrain) {
+      spheroBrain.start()
+    }
+
+    event.preventDefault()
+    return false
+  })
+
+  $('#sphero_stop').on('click', function(event) {
+    if(spheroBrain) {
+      spheroBrain.stop()
+    }
+
+    event.preventDefault()
+    return false
+  })
+
   $('canvas').on('click', function(event) {
     var bounds = findColour(canvas, range, sensitivity, event)
 
     // was it the ball or a team?
-    if(targets.length < 3) {
+    if(targets.length < 1) {
       if(targets.length == 0) {
         sphero = new Sphero(socket, bounds, sphero_speed, blobEmitter)
         spheroBrain = new SpheroBrain(sphero, CANVAS_WIDTH, CANVAS_HEIGHT)

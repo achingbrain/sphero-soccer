@@ -173,4 +173,12 @@ Sphero.prototype.setColour = function(colour) {
   this._socket.emit('sphero:colour', colour)
 }
 
+Sphero.prototype.turnOnStabilisation = function() {
+  this._socket.emit('sphero:stabilisation', true)
+}
+
+Sphero.prototype.turnOffStabilisation = function() {
+  this._socket.emit('sphero:stabilisation', false)
+}
+
 module.exports = Sphero
